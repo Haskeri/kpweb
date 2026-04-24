@@ -1,0 +1,66 @@
+\startappendix
+
+\phantomsection
+\section*{Приложение А. Диаграмма вариантов использования}
+\addcontentsline{toc}{section}{Приложение А. Диаграмма вариантов использования}
+\stepcounter{section}
+
+\begin{figure}[ht!]
+\centering
+\resizebox{0.97\textwidth}{!}{%
+\begin{tikzpicture}[
+    actor/.style={draw=brandBlue, thick, circle, minimum size=0.9cm, fill=white, font=\small\bfseries},
+    ucGuest/.style={draw=brandTeal, line width=0.7pt, ellipse, minimum width=3.8cm, minimum height=1.0cm, align=center, fill=brandTealSoft, inner sep=2pt, font=\small},
+    ucClient/.style={draw=brandBlue, line width=0.7pt, ellipse, minimum width=3.8cm, minimum height=1.0cm, align=center, fill=brandBlueSoft, inner sep=2pt, font=\small},
+    ucManager/.style={draw=brandOrange, line width=0.7pt, ellipse, minimum width=3.8cm, minimum height=1.0cm, align=center, fill=brandOrangeSoft, inner sep=2pt, font=\small},
+    ucAdmin/.style={draw=brandPurple, line width=0.7pt, ellipse, minimum width=3.8cm, minimum height=1.0cm, align=center, fill=brandPurpleSoft, inner sep=2pt, font=\small},
+    system/.style={draw=brandBlue, line width=1pt, rectangle, rounded corners=8pt, dashed, inner sep=12pt, fill=brandLight},
+    >={Stealth[length=3mm]},
+    line/.style={draw=brandDark!60, thick},
+    rel/.style={dashed, draw=brandRed, line width=0.7pt, ->},
+]
+\node[ucGuest]   (browse)    at (0,  4.5) {Просмотр каталога};
+\node[ucGuest]   (regauth)   at (0,  3.0) {Регистрация и авторизация};
+\node[ucClient]  (configure) at (0,  1.5) {Сборка в конфигураторе};
+\node[ucClient]  (cart)      at (0,  0.0) {Корзина};
+\node[ucClient]  (placeord)  at (0, -1.5) {Оформление заказа};
+\node[ucClient]  (history)   at (0, -3.0) {История заказов и профиль};
+\node[ucManager] (mgcat)     at (5.8,  4.5) {CRUD каталога};
+\node[ucManager] (mgbuilds)  at (5.8,  3.0) {CRUD сборок};
+\node[ucManager] (mgorders)  at (5.8,  1.5) {Обработка заказов};
+\node[ucManager] (mgio)      at (5.8,  0.0) {Импорт / экспорт CSV};
+\node[ucManager] (mgstock)   at (5.8, -1.5) {Корректировка остатков};
+\node[ucAdmin]   (adusers)   at (5.8, -3.0) {Управление пользователями};
+\node[ucAdmin]   (adstats)   at (5.8, -4.5) {Аналитика};
+\begin{scope}[on background layer]
+\node[system, fit=(browse)(history)(mgcat)(adstats)] {};
+\end{scope}
+\node[actor, draw=brandTeal,   text=brandTeal,
+    label={[font=\small, text=brandTeal]below:Гость}]      (guest)   at (-6.5,  3.7) {};
+\node[actor, draw=brandBlue,   text=brandBlue,
+    label={[font=\small, text=brandBlue]below:Клиент}]     (client)  at (-6.5, -0.5) {};
+\node[actor, draw=brandOrange, text=brandOrange,
+    label={[font=\small, text=brandOrange]below:Менеджер}] (manager) at (11.5,  1.5) {};
+\node[actor, draw=brandPurple, text=brandPurple,
+    label={[font=\small, text=brandPurple]below:Админ}]    (admin)   at (11.5, -3.0) {};
+\draw[line, color=brandTeal]   (guest)   -- (browse);
+\draw[line, color=brandTeal]   (guest)   -- (regauth);
+\draw[rel] (client) -- node[above, sloped, font=\scriptsize, text=brandRed] {наследует} (guest);
+\draw[line, color=brandBlue]   (client)  -- (configure);
+\draw[line, color=brandBlue]   (client)  -- (cart);
+\draw[line, color=brandBlue]   (client)  -- (placeord);
+\draw[line, color=brandBlue]   (client)  -- (history);
+\draw[line, color=brandOrange] (manager) -- (mgcat);
+\draw[line, color=brandOrange] (manager) -- (mgbuilds);
+\draw[line, color=brandOrange] (manager) -- (mgorders);
+\draw[line, color=brandOrange] (manager) -- (mgio);
+\draw[line, color=brandOrange] (manager) -- (mgstock);
+\draw[rel] (admin) -- node[above, sloped, font=\scriptsize, text=brandRed] {наследует} (manager);
+\draw[line, color=brandPurple] (admin)   -- (adusers);
+\draw[line, color=brandPurple] (admin)   -- (adstats);
+\draw[rel] (placeord) -- node[above, sloped, font=\scriptsize, text=brandRed]
+    {\textless\textless include\textgreater\textgreater} (regauth);
+\end{tikzpicture}%
+}
+\caption{Диаграмма вариантов использования системы pcshop (UML Use Case)}
+\end{figure}
