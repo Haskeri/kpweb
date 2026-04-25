@@ -1,0 +1,183 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section class="hero mb-5">
+    <div class="row align-items-center position-relative">
+        <div class="col-lg-7">
+            <span class="badge mb-3" style="background: rgba(255,255,255,0.2); color: white; padding: 0.5em 1em;">
+                <i class="bi bi-lightning-charge-fill"></i> Новые сборки 2026
+            </span>
+            <h1 class="mb-3">Соберите свой ПК<br>под любую задачу</h1>
+            <p class="lead mb-4" style="max-width: 540px;">
+                Каталог комплектующих, готовые сборки и пошаговый конфигуратор
+                с проверкой совместимости. Быстрое оформление заказа и удобный
+                личный кабинет.
+            </p>
+            <div class="d-flex flex-wrap gap-2">
+                <a href="{% url 'builds:configure' %}" class="btn btn-accent btn-lg">
+                    <i class="bi bi-stars me-1"></i> Открыть конфигуратор
+                </a>
+                <a href="{% url 'builds:list' %}" class="btn btn-outline-light btn-lg">
+                    <i class="bi bi-pc-display-horizontal me-1"></i> Готовые сборки
+                </a>
+            </div>
+        </div>
+        <div class="col-lg-5 text-center d-none d-lg-block">
+            <i class="bi bi-cpu" style="font-size: 12rem; opacity: 0.15;"></i>
+        </div>
+    </div>
+</section>
+
+<section class="mb-5">
+    <div class="d-flex justify-content-between align-items-end mb-3">
+        <div>
+            <h2 class="h4 mb-1">Категории</h2>
+            <p class="text-muted mb-0 small">Выберите тип комплектующих</p>
+        </div>
+        <a href="{% url 'catalog:list' %}" class="text-decoration-none small">
+            Все категории <i class="bi bi-arrow-right"></i>
+        </a>
+    </div>
+    <div class="row g-3">
+        {% for category in categories %}
+            <div class="col-6 col-md-4 col-lg-3">
+                <a href="{% url 'catalog:list' %}?category={{ category.pk }}" class="text-decoration-none">
+                    <div class="card card-hover h-100 text-center">
+                        <div class="card-body">
+                            <div class="mb-2" style="font-size: 1.75rem; color: var(--brand-primary);">
+                                {% if 'cpu' in category.slug or 'процесс' in category.title|lower %}<i class="bi bi-cpu-fill"></i>
+                                {% elif 'gpu' in category.slug or 'видео' in category.title|lower %}<i class="bi bi-gpu-card"></i>
+                                {% elif 'ram' in category.slug or 'память' in category.title|lower %}<i class="bi bi-memory"></i>
+                                {% elif 'storage' in category.slug or 'накоп' in category.title|lower %}<i class="bi bi-device-hdd"></i>
+                                {% elif 'psu' in category.slug or 'питан' in category.title|lower %}<i class="bi bi-lightning-charge"></i>
+                                {% elif 'case' in category.slug or 'корп' in category.title|lower %}<i class="bi bi-box"></i>
+                                {% elif 'mother' in category.slug or 'материн' in category.title|lower %}<i class="bi bi-motherboard"></i>
+                                {% elif 'cooling' in category.slug or 'охлажд' in category.title|lower %}<i class="bi bi-wind"></i>
+                                {% else %}<i class="bi bi-pc-display"></i>{% endif %}
+                            </div>
+                            <h6 class="card-title mb-0">{{ category.title }}</h6>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        {% empty %}
+            <div class="col-12">
+                <div class="alert alert-info mb-0">
+                    Каталог пока пуст. Менеджер может добавить категории через админ-панель.
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</section>
+
+{% if featured_builds %}
+<section class="mb-5">
+    <div class="d-flex justify-content-between align-items-end mb-3">
+        <div>
+            <h2 class="h4 mb-1">Популярные сборки</h2>
+            <p class="text-muted mb-0 small">Готовые конфигурации под разные задачи</p>
+        </div>
+        <a href="{% url 'builds:list' %}" class="text-decoration-none small">
+            Все сборки <i class="bi bi-arrow-right"></i>
+        </a>
+    </div>
+    <div class="row g-3">
+        {% for build in featured_builds %}
+            <div class="col-md-6 col-lg-4">
+                <div class="card card-hover h-100">
+                    <div class="card-body d-flex flex-column">
+                        <span class="badge text-bg-primary mb-2 align-self-start">{{ build.items_count }} комплектующих</span>
+                        <h5 class="card-title">{{ build.title }}</h5>
+                        <p class="text-muted small flex-grow-1">{{ build.description|truncatechars:100 }}</p>
+                        <div class="d-flex justify-content-between align-items-end mt-3">
+                            <div>
+                                <small class="text-muted d-block">от</small>
+                                <span class="fw-bold fs-4">{{ build.total_price|floatformat:0 }} ₽</span>
+                            </div>
+                            <a href="{% url 'builds:detail' build.pk %}" class="btn btn-primary btn-sm">
+                                Подробнее <i class="bi bi-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+{% if new_components %}
+<section class="mb-5">
+    <div class="d-flex justify-content-between align-items-end mb-3">
+        <div>
+            <h2 class="h4 mb-1">Новинки в наличии</h2>
+            <p class="text-muted mb-0 small">Последние поступления на склад</p>
+        </div>
+        <a href="{% url 'catalog:list' %}" class="text-decoration-none small">
+            Весь каталог <i class="bi bi-arrow-right"></i>
+        </a>
+    </div>
+    <div class="row g-3">
+        {% for component in new_components %}
+        <div class="col-6 col-md-4 col-lg-3">
+            <div class="card product-card h-100">
+                {% if component.image %}
+                    <img src="{{ component.image.url }}" class="card-img-top"
+                         style="height: 120px; object-fit: cover;" alt="{{ component }}">
+                {% else %}
+                    <div class="product-img-placeholder" style="height: 120px; font-size: 2rem;">
+                        {% if 'cpu' in component.category.slug %}<i class="bi bi-cpu-fill" style="color:var(--brand-primary);opacity:.5;"></i>
+                        {% elif 'gpu' in component.category.slug %}<i class="bi bi-gpu-card" style="color:#7C3AED;opacity:.5;"></i>
+                        {% elif 'ram' in component.category.slug %}<i class="bi bi-memory" style="color:var(--brand-success);opacity:.5;"></i>
+                        {% elif 'storage' in component.category.slug %}<i class="bi bi-device-hdd-fill" style="color:var(--brand-accent);opacity:.5;"></i>
+                        {% elif 'psu' in component.category.slug %}<i class="bi bi-lightning-charge-fill" style="color:#EF4444;opacity:.5;"></i>
+                        {% else %}<i class="bi bi-pc-display" style="opacity:.3;"></i>{% endif %}
+                    </div>
+                {% endif %}
+                <div class="card-body d-flex flex-column p-3">
+                    <p class="text-muted mb-1" style="font-size:.75rem;">{{ component.category.title }}</p>
+                    <h6 class="card-title mb-2 flex-grow-1" style="font-size:.875rem;">{{ component.title|truncatechars:50 }}</h6>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="fw-bold">{{ component.sale_price|floatformat:0 }} ₽</span>
+                        <a href="{% url 'catalog:detail' component.pk %}" class="btn btn-outline-primary btn-sm">→</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<section class="mb-5">
+    <div class="row g-3">
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <div class="mb-3" style="font-size: 2rem; color: var(--brand-primary);"><i class="bi bi-shield-check"></i></div>
+                    <h6>Совместимость</h6>
+                    <p class="text-muted small mb-0">Конфигуратор проверяет совместимость комплектующих автоматически</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <div class="mb-3" style="font-size: 2rem; color: var(--brand-accent);"><i class="bi bi-truck"></i></div>
+                    <h6>Быстрая доставка</h6>
+                    <p class="text-muted small mb-0">Курьером по городу или самовывоз в день заказа</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <div class="mb-3" style="font-size: 2rem; color: var(--brand-success);"><i class="bi bi-headset"></i></div>
+                    <h6>Поддержка 24/7</h6>
+                    <p class="text-muted small mb-0">Помощь со сборкой и подбором конфигурации в любое время</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
