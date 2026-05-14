@@ -1,0 +1,57 @@
+[
+  {
+    "model": "orders.orderstatus",
+    "pk": 1,
+    "fields": {
+      "code": "new",
+      "title": "Новый",
+      "color": "#1F3B73",
+      "sort_order": 10,
+      "is_terminal": false
+    }
+  },
+  {
+    "model": "orders.orderstatus",
+    "pk": 2,
+    "fields": {
+      "code": "in_progress",
+      "title": "В работе",
+      "color": "#FF7A00",
+      "sort_order": 20,
+      "is_terminal": false
+    }
+  },
+  {
+    "model": "orders.orderstatus",
+    "pk": 3,
+    "fields": {
+      "code": "ready",
+      "title": "Готов к выдаче",
+      "color": "#2E8B57",
+      "sort_order": 30,
+      "is_terminal": false
+    }
+  },
+  {
+    "model": "orders.orderstatus",
+    "pk": 4,
+    "fields": {
+      "code": "completed",
+      "title": "Выполнен",
+      "color": "#198754",
+      "sort_order": 40,
+      "is_terminal": true
+    }
+  },
+  {
+    "model": "orders.orderstatus",
+    "pk": 5,
+    "fields": {
+      "code": "cancelled",
+      "title": "Отменён",
+      "color": "#D9534F",
+      "sort_order": 50,
+      "is_terminal": true
+    }
+  }
+]

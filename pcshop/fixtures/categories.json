@@ -1,0 +1,10 @@
+[
+  {"model": "catalog.category", "pk": 1, "fields": {"title": "Процессоры", "slug": "cpu", "description": "Центральные процессоры (CPU)."}},
+  {"model": "catalog.category", "pk": 2, "fields": {"title": "Материнские платы", "slug": "motherboards", "description": "Материнские платы для разных сокетов."}},
+  {"model": "catalog.category", "pk": 3, "fields": {"title": "Оперативная память", "slug": "ram", "description": "Модули оперативной памяти DDR4 / DDR5."}},
+  {"model": "catalog.category", "pk": 4, "fields": {"title": "Видеокарты", "slug": "gpu", "description": "Графические ускорители (GPU)."}},
+  {"model": "catalog.category", "pk": 5, "fields": {"title": "Накопители", "slug": "storage", "description": "SSD и HDD накопители."}},
+  {"model": "catalog.category", "pk": 6, "fields": {"title": "Блоки питания", "slug": "psu", "description": "Блоки питания различной мощности."}},
+  {"model": "catalog.category", "pk": 7, "fields": {"title": "Корпуса", "slug": "cases", "description": "Корпуса формата ATX, mATX, ITX."}},
+  {"model": "catalog.category", "pk": 8, "fields": {"title": "Системы охлаждения", "slug": "cooling", "description": "Воздушное и жидкостное охлаждение."}}
+]

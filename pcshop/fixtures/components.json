@@ -1,0 +1,152 @@
+[
+  {
+    "model": "catalog.component",
+    "pk": 1,
+    "fields": {
+      "category": 1,
+      "title": "Ryzen 7 7700X",
+      "brand": "AMD",
+      "model": "7700X",
+      "specs": {"sockets": "AM5", "cores": 8, "threads": 16, "base_clock_ghz": 4.5, "tdp_w": 105},
+      "purchase_price": "22000.00",
+      "sale_price": "27990.00",
+      "stock": 8,
+      "is_active": true
+    }
+  },
+  {
+    "model": "catalog.component",
+    "pk": 2,
+    "fields": {
+      "category": 1,
+      "title": "Core i5-13600K",
+      "brand": "Intel",
+      "model": "13600K",
+      "specs": {"sockets": "LGA1700", "cores": 14, "threads": 20, "base_clock_ghz": 3.5, "tdp_w": 125},
+      "purchase_price": "24000.00",
+      "sale_price": "30490.00",
+      "stock": 5,
+      "is_active": true
+    }
+  },
+  {
+    "model": "catalog.component",
+    "pk": 3,
+    "fields": {
+      "category": 2,
+      "title": "B650 Tomahawk WiFi",
+      "brand": "MSI",
+      "model": "B650 Tomahawk",
+      "specs": {"socket": "AM5", "form_factor": "ATX", "memory": "DDR5", "wifi": true},
+      "purchase_price": "16000.00",
+      "sale_price": "20990.00",
+      "stock": 6,
+      "is_active": true
+    }
+  },
+  {
+    "model": "catalog.component",
+    "pk": 4,
+    "fields": {
+      "category": 2,
+      "title": "Z790 Aorus Elite",
+      "brand": "Gigabyte",
+      "model": "Z790 Aorus Elite",
+      "specs": {"socket": "LGA1700", "form_factor": "ATX", "memory": "DDR5"},
+      "purchase_price": "19000.00",
+      "sale_price": "24990.00",
+      "stock": 3,
+      "is_active": true
+    }
+  },
+  {
+    "model": "catalog.component",
+    "pk": 5,
+    "fields": {
+      "category": 3,
+      "title": "Vengeance 32GB DDR5-6000",
+      "brand": "Corsair",
+      "model": "CMK32GX5M2B6000C36",
+      "specs": {"capacity_gb": 32, "type": "DDR5", "speed_mts": 6000, "kit": "2x16"},
+      "purchase_price": "9500.00",
+      "sale_price": "12490.00",
+      "stock": 12,
+      "is_active": true
+    }
+  },
+  {
+    "model": "catalog.component",
+    "pk": 6,
+    "fields": {
+      "category": 4,
+      "title": "GeForce RTX 4070 SUPER 12GB",
+      "brand": "NVIDIA",
+      "model": "RTX 4070 SUPER",
+      "specs": {"memory_gb": 12, "memory_type": "GDDR6X", "tdp_w": 220},
+      "purchase_price": "59000.00",
+      "sale_price": "72990.00",
+      "stock": 2,
+      "is_active": true
+    }
+  },
+  {
+    "model": "catalog.component",
+    "pk": 7,
+    "fields": {
+      "category": 5,
+      "title": "Samsung 990 Pro 1TB",
+      "brand": "Samsung",
+      "model": "MZ-V9P1T0BW",
+      "specs": {"capacity_gb": 1024, "interface": "PCIe 4.0 NVMe", "form_factor": "M.2 2280"},
+      "purchase_price": "8500.00",
+      "sale_price": "11490.00",
+      "stock": 15,
+      "is_active": true
+    }
+  },
+  {
+    "model": "catalog.component",
+    "pk": 8,
+    "fields": {
+      "category": 6,
+      "title": "RM850e 850W 80+ Gold",
+      "brand": "Corsair",
+      "model": "RM850e",
+      "specs": {"power_w": 850, "certificate": "80+ Gold", "modular": true},
+      "purchase_price": "9000.00",
+      "sale_price": "11990.00",
+      "stock": 7,
+      "is_active": true
+    }
+  },
+  {
+    "model": "catalog.component",
+    "pk": 9,
+    "fields": {
+      "category": 7,
+      "title": "4000D Airflow",
+      "brand": "Corsair",
+      "model": "4000D Airflow",
+      "specs": {"form_factor": "ATX Mid-Tower", "color": "black"},
+      "purchase_price": "7500.00",
+      "sale_price": "9990.00",
+      "stock": 4,
+      "is_active": true
+    }
+  },
+  {
+    "model": "catalog.component",
+    "pk": 10,
+    "fields": {
+      "category": 8,
+      "title": "Peerless Assassin 120 SE",
+      "brand": "Thermalright",
+      "model": "PA120 SE",
+      "specs": {"type": "air", "tdp_w": 245, "fans": 2},
+      "purchase_price": "3000.00",
+      "sale_price": "4490.00",
+      "stock": 18,
+      "is_active": true
+    }
+  }
+]
