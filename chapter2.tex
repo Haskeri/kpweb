@@ -1,0 +1,661 @@
+\phantomsection
+\section*{Глава 2. Проектирование веб-приложения}
+\addcontentsline{toc}{section}{Глава 2. Проектирование веб-приложения}
+\stepcounter{section}
+
+Во второй главе курсовой работы выполняется проектирование разрабатываемого веб-приложения. На основании сформулированных в первой главе требований проводится анализ целевой аудитории и пользовательских ролей, формализуются функциональные и нефункциональные требования, описываются варианты использования и сценарии работы пользователей, проектируется модель данных приложения и разрабатываются макеты основных страниц.
+
+\subsection{Анализ целевой аудитории и ролей пользователей}
+
+Разрабатываемое веб-приложение ориентировано на небольшие компании и индивидуальных специалистов, занимающихся продажей комплектующих, сборкой персональных компьютеров под заказ и сопровождением заказов клиентов. Целевая аудитория системы делится на две принципиально разные группы: внутренние пользователи (сотрудники компании --- администратор и менеджер) и внешние пользователи (клиенты --- посетители сайта и зарегистрированные покупатели). Анализ предметной области показал, что в работе таких организаций задействованы три основные роли пользователей.
+
+\textbf{Администратор.} Сотрудник, отвечающий за общее техническое сопровождение приложения, ведение справочников, управление учётными записями других пользователей и настройку параметров системы. Возрастной диапазон --- 22--40 лет, уверенный пользователь компьютера, ежедневно работает с системой с настольного устройства. Ключевые ожидания: быстрый доступ к административной панели, возможность массового изменения справочников, чёткое разграничение прав менеджеров и клиентов.
+
+\textbf{Менеджер.} Основной операционный пользователь системы. В обязанности менеджера входит ведение каталога комплектующих, оформление и сопровождение заказов клиентов, формирование сборок ПК, контроль остатков на складе и подготовка отчётности. Возрастной диапазон --- 22--45 лет, средний и выше среднего уровень владения IT, работает с системой 6--8 часов в день преимущественно с настольного устройства. Ключевые ожидания: удобный CRUD-интерфейс для товаров, заказов и сборок; быстрый поиск по каталогу; наглядное отображение остатков; возможность импорта и экспорта данных.
+
+\textbf{Клиент.} Конечный пользователь, для которого приложение является витриной товаров и средством оформления заказа. Возрастной диапазон --- 18--45 лет, уровень владения IT --- выше среднего. Использует приложение преимущественно с настольного устройства или планшета, частично --- с мобильного телефона. Ключевые ожидания: удобный фильтр и поиск товаров по характеристикам, возможность собрать конфигурацию ПК из совместимых комплектующих, оформление заказа без длительной регистрации, просмотр истории заказов в личном кабинете.
+
+Отдельной категорией являются \textbf{гости} --- неавторизованные посетители сайта, имеющие доступ к публичному каталогу товаров и формам регистрации. Сводные характеристики ролей приведены в таблице~\ref{tab:roles}.
+
+\begin{table}[ht!]
+\caption{Сравнительные характеристики ролей пользователей}
+\label{tab:roles}
+\small
+\begin{tabularx}{\textwidth}{|>{\RaggedRight\arraybackslash}p{0.16\textwidth}|>{\RaggedRight\arraybackslash}X|>{\RaggedRight\arraybackslash}p{0.20\textwidth}|>{\RaggedRight\arraybackslash}p{0.18\textwidth}|}
+\hline
+\textbf{Роль} & \textbf{Основные задачи} & \textbf{Частота использования} & \textbf{Устройство} \\ \hline
+Администратор & Управление пользователями и ролями, настройка справочников, аналитика & Несколько раз в неделю, 1--2~ч в день & Настольный ПК \\ \hline
+Менеджер & Ведение каталога, оформление заказов, формирование сборок, контроль остатков & Ежедневно, 6--8~ч в день & Настольный ПК / ноутбук \\ \hline
+Клиент & Просмотр каталога, конфигурирование сборки, оформление заказа & 1--3 сессии при покупке & ПК, планшет, смартфон \\ \hline
+Гость & Просмотр каталога, регистрация & Эпизодически & ПК, планшет, смартфон \\ \hline
+\end{tabularx}
+\end{table}
+
+На основе перечня ролей построена матрица прав доступа к основным сущностям системы (таблица~\ref{tab:rbac}). Матрица фиксирует разрешённые операции: C --- создание, R --- чтение, U --- изменение, D --- удаление.
+
+\begin{table}[ht!]
+\caption{Матрица прав доступа (CRUD)}
+\label{tab:rbac}
+\small
+\begin{tabularx}{\textwidth}{|>{\RaggedRight\arraybackslash}p{0.32\textwidth}|>{\centering\arraybackslash}X|>{\centering\arraybackslash}X|>{\centering\arraybackslash}X|>{\centering\arraybackslash}X|}
+\hline
+\textbf{Сущность / действие} & \textbf{Гость} & \textbf{Клиент} & \textbf{Мене\-джер} & \textbf{Адми\-нистра\-тор} \\ \hline
+Каталог комплектующих & R & R & CRUD & CRUD \\ \hline
+Готовые сборки ПК & R & R & CRUD & CRUD \\ \hline
+Свой заказ & --- & CRU & RU & RUD \\ \hline
+Чужие заказы & --- & --- & RU & RUD \\ \hline
+Свой профиль (клиент) & --- & RU & R & RU \\ \hline
+Учётные записи пользователей & --- & --- & --- & CRUD \\ \hline
+Справочники (категории, статусы) & --- & --- & R & CRUD \\ \hline
+Аналитические отчёты & --- & --- & R & R \\ \hline
+\end{tabularx}
+\end{table}
+
+Полученные сведения о целевой аудитории и матрице прав доступа учитываются при проектировании пользовательских интерфейсов: для администратора и менеджера предусматривается интерфейс с большим количеством таблиц, фильтров и действий, ориентированный на работу с настольного устройства; для клиента --- более простой и адаптивный интерфейс с поддержкой мобильных устройств.
+
+\subsection{Описание функциональности приложения}
+
+На основе анализа предметной области, требований к системе и описанных пользовательских ролей сформирован перечень функциональных возможностей разрабатываемого веб-приложения. Функциональность представлена через перечень функциональных и нефункциональных требований, диаграмму вариантов использования, пользовательские истории и описание ключевых сценариев работы.
+
+Действующими лицами (актёрами) системы являются: \emph{гость} --- неавторизованный посетитель сайта, \emph{клиент} --- зарегистрированный покупатель, \emph{менеджер} --- сотрудник, ведущий товары и заказы, \emph{администратор} --- сотрудник, имеющий полный доступ к системе.
+
+Диаграмма вариантов использования (рисунок~\ref{fig:usecase}) объединяет в единой системе четыре актёра и пятнадцать прецедентов. Между ролями определены отношения наследования (клиент наследует возможности гостя, администратор --- возможности менеджера), а между прецедентами «Оформление заказа» и «Регистрация и авторизация» определена связь \emph{include}: оформление заказа неавторизованным пользователем возможно только после прохождения процедуры регистрации или входа.
+
+\begin{figure}[ht!]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[
+    actor/.style={draw=brandBlue, thick, circle, minimum size=0.9cm, fill=white, font=\small\bfseries},
+    ucGuest/.style={draw=brandTeal, line width=0.7pt, ellipse, minimum width=3.8cm, minimum height=1.0cm, align=center, fill=brandTealSoft, inner sep=2pt, font=\small, blur shadow={shadow blur steps=3, shadow opacity=20}},
+    ucClient/.style={draw=brandBlue, line width=0.7pt, ellipse, minimum width=3.8cm, minimum height=1.0cm, align=center, fill=brandBlueSoft, inner sep=2pt, font=\small, blur shadow={shadow blur steps=3, shadow opacity=20}},
+    ucManager/.style={draw=brandOrange, line width=0.7pt, ellipse, minimum width=3.8cm, minimum height=1.0cm, align=center, fill=brandOrangeSoft, inner sep=2pt, font=\small, blur shadow={shadow blur steps=3, shadow opacity=20}},
+    ucAdmin/.style={draw=brandPurple, line width=0.7pt, ellipse, minimum width=3.8cm, minimum height=1.0cm, align=center, fill=brandPurpleSoft, inner sep=2pt, font=\small, blur shadow={shadow blur steps=3, shadow opacity=20}},
+    system/.style={draw=brandBlue, line width=1pt, rectangle, rounded corners=8pt, dashed, inner sep=12pt, fill=brandLight},
+    >={Stealth[length=3mm]},
+    line/.style={draw=brandDark!60, thick},
+    rel/.style={dashed, draw=brandRed, line width=0.7pt, ->},
+    every node/.style={font=\small},
+]
+\node[ucGuest]   (browse)    at (0,  4.5) {Просмотр каталога};
+\node[ucGuest]   (regauth)   at (0,  3.0) {Регистрация и авторизация};
+\node[ucClient]  (configure) at (0,  1.5) {Сборка в конфигураторе};
+\node[ucClient]  (cart)      at (0,  0.0) {Корзина};
+\node[ucClient]  (placeord)  at (0, -1.5) {Оформление заказа};
+\node[ucClient]  (history)   at (0, -3.0) {История заказов и профиль};
+\node[ucManager] (mgcat)     at (5.8,  4.5) {CRUD каталога};
+\node[ucManager] (mgbuilds)  at (5.8,  3.0) {CRUD сборок};
+\node[ucManager] (mgorders)  at (5.8,  1.5) {Обработка заказов};
+\node[ucManager] (mgio)      at (5.8,  0.0) {Импорт / экспорт};
+\node[ucManager] (mgstock)   at (5.8, -1.5) {Корректировка остатков};
+\node[ucAdmin]   (adusers)   at (5.8, -3.0) {Управление пользователями};
+\node[ucAdmin]   (adstats)   at (5.8, -4.5) {Аналитика и справочники};
+\begin{scope}[on background layer]
+\node[system, fit=(browse)(history)(mgcat)(adstats),
+      label={[font=\small\bfseries, text=brandBlue]above:{Система pcshop}}] {};
+\end{scope}
+\node[actor, draw=brandTeal,   text=brandTeal,   label={[font=\small, text=brandTeal]below:Гость}]          (guest)   at (-6.5,  3.7) {};
+\node[actor, draw=brandBlue,   text=brandBlue,   label={[font=\small, text=brandBlue]below:Клиент}]         (client)  at (-6.5, -0.5) {};
+\node[actor, draw=brandOrange, text=brandOrange, label={[font=\small, text=brandOrange]below:Менеджер}]     (manager) at (11.5,  1.5) {};
+\node[actor, draw=brandPurple, text=brandPurple, label={[font=\small, text=brandPurple]below:Администратор}](admin)   at (11.5, -3.0) {};
+\draw[line, color=brandTeal] (guest) -- (browse);
+\draw[line, color=brandTeal] (guest) -- (regauth);
+\draw[rel] (client) -- node[above, sloped, font=\scriptsize, text=brandRed] {наследует} (guest);
+\draw[line, color=brandBlue] (client) -- (configure);
+\draw[line, color=brandBlue] (client) -- (cart);
+\draw[line, color=brandBlue] (client) -- (placeord);
+\draw[line, color=brandBlue] (client) -- (history);
+\draw[line, color=brandOrange] (manager) -- (mgcat);
+\draw[line, color=brandOrange] (manager) -- (mgbuilds);
+\draw[line, color=brandOrange] (manager) -- (mgorders);
+\draw[line, color=brandOrange] (manager) -- (mgio);
+\draw[line, color=brandOrange] (manager) -- (mgstock);
+\draw[rel] (admin) -- node[above, sloped, font=\scriptsize, text=brandRed] {наследует} (manager);
+\draw[line, color=brandPurple] (admin) -- (adusers);
+\draw[line, color=brandPurple] (admin) -- (adstats);
+\draw[rel] (placeord) -- node[above, sloped, font=\scriptsize, text=brandRed] {\textless\textless include\textgreater\textgreater} (regauth);
+\end{tikzpicture}%
+}
+\caption{Диаграмма вариантов использования (UML use case)}
+\label{fig:usecase}
+\end{figure}
+
+Функциональные требования к системе систематизированы и приведены в таблице~\ref{tab:fr}.
+
+\begin{table}[ht!]
+\caption{Функциональные требования к системе}
+\label{tab:fr}
+\small
+\begin{tabularx}{\textwidth}{|>{\centering\arraybackslash}p{0.10\textwidth}|>{\RaggedRight\arraybackslash}p{0.32\textwidth}|>{\RaggedRight\arraybackslash}X|}
+\hline
+\textbf{ID} & \textbf{Требование} & \textbf{Описание} \\ \hline
+FR-1 & Регистрация и аутентификация & Регистрация с email и паролем, авторизация, восстановление пароля \\ \hline
+FR-2 & Ролевая модель доступа & Назначение роли пользователю, проверка прав на каждом действии \\ \hline
+FR-3 & Управление каталогом & CRUD-операции над комплектующими, категориями и характеристиками \\ \hline
+FR-4 & Конфигуратор сборки ПК & Пошаговый выбор комплектующих с проверкой совместимости \\ \hline
+FR-5 & Управление сборками & CRUD-операции над готовыми сборками с указанием состава и цены \\ \hline
+FR-6 & Корзина и оформление заказа & Добавление товаров и сборок в корзину, оформление заказа \\ \hline
+FR-7 & Управление заказами & Просмотр и изменение статусов заказов менеджером, фильтрация \\ \hline
+FR-8 & Личный кабинет клиента & История заказов, текущие заказы, профиль, изменение пароля \\ \hline
+FR-9 & Импорт и экспорт данных & Импорт каталога из CSV/Excel с валидацией, экспорт в Excel \\ \hline
+FR-10 & Аналитические отчёты & Отчёты по выручке, прибыли, остаткам, популярным позициям \\ \hline
+FR-11 & Уведомления & Email о смене статуса заказа, низких остатках и новых заказах \\ \hline
+FR-12 & Управление пользователями & Создание учётных записей сотрудников, изменение ролей, блокировка \\ \hline
+\end{tabularx}
+\end{table}
+
+Нефункциональные требования, описывающие качества системы, приведены в таблице~\ref{tab:nfr}.
+
+\begin{table}[ht!]
+\caption{Нефункциональные требования к системе}
+\label{tab:nfr}
+\small
+\begin{tabularx}{\textwidth}{|>{\centering\arraybackslash}p{0.10\textwidth}|>{\RaggedRight\arraybackslash}p{0.26\textwidth}|>{\RaggedRight\arraybackslash}X|}
+\hline
+\textbf{ID} & \textbf{Категория} & \textbf{Требование} \\ \hline
+NFR-1 & Производительность & Время отклика страниц каталога не более 2~с при 50 одновременных пользователях \\ \hline
+NFR-2 & Масштабируемость & Возможность размещения базы и приложения на отдельных серверах \\ \hline
+NFR-3 & Безопасность & Хранение паролей в виде хэшей, защита от CSRF, XSS, SQL-инъекций \\ \hline
+NFR-4 & Надёжность & Резервное копирование БД ежедневно, журналирование действий \\ \hline
+NFR-5 & Удобство использования & Адаптивная вёрстка (mobile first), освоение интерфейса менеджером за 1~ч \\ \hline
+NFR-6 & Совместимость & Поддержка актуальных версий браузеров Chrome, Firefox, Safari, Edge \\ \hline
+NFR-7 & Сопровождаемость & Соответствие стилю PEP~8, покрытие тестами не менее 60\,\% бизнес-логики \\ \hline
+NFR-8 & Расширяемость & Возможность добавления новых ролей и сущностей без переработки ядра \\ \hline
+\end{tabularx}
+\end{table}
+
+Функциональные требования декомпозированы на пользовательские истории по ролям~\cite{cohn2004}. Истории для роли «Клиент» приведены в таблице~\ref{tab:us-cli}, для роли «Менеджер» --- в таблице~\ref{tab:us-mgr}, для роли «Администратор» --- в таблице~\ref{tab:us-adm}.
+
+\begin{table}[ht!]
+\caption{Пользовательские истории для роли «Клиент»}
+\label{tab:us-cli}
+\small
+\begin{tabularx}{\textwidth}{|>{\centering\arraybackslash}p{0.06\textwidth}|>{\RaggedRight\arraybackslash}X|>{\RaggedRight\arraybackslash}X|}
+\hline
+\textbf{№} & \textbf{User story} & \textbf{Критерий приёмки} \\ \hline
+US-1 & Как клиент, я хочу искать комплектующие по категории и характеристикам & В каталоге доступны фильтры по категории, цене и характеристикам \\ \hline
+US-2 & Как клиент, я хочу собрать конфигурацию ПК из совместимых комплектующих & В конфигураторе несовместимые позиции скрываются \\ \hline
+US-3 & Как клиент, я хочу оформить заказ из корзины & Поддерживается оформление с указанием контактов и оплаты \\ \hline
+US-4 & Как клиент, я хочу видеть историю своих заказов & В личном кабинете список заказов с датой, составом, суммой и статусом \\ \hline
+US-5 & Как клиент, я хочу видеть наличие товара на складе & Карточка товара отображает фактическое количество в наличии \\ \hline
+US-6 & Как клиент, я хочу получать уведомления о смене статуса & При смене статуса отправляется email \\ \hline
+\end{tabularx}
+\end{table}
+
+\begin{table}[ht!]
+\caption{Пользовательские истории для роли «Менеджер»}
+\label{tab:us-mgr}
+\small
+\begin{tabularx}{\textwidth}{|>{\centering\arraybackslash}p{0.06\textwidth}|>{\RaggedRight\arraybackslash}X|>{\RaggedRight\arraybackslash}X|}
+\hline
+\textbf{№} & \textbf{User story} & \textbf{Критерий приёмки} \\ \hline
+US-7 & Как менеджер, я хочу добавлять и редактировать комплектующие & Доступна форма создания и редактирования товара \\ \hline
+US-8 & Как менеджер, я хочу формировать готовые сборки ПК & При сохранении сборки комплектующие резервируются \\ \hline
+US-9 & Как менеджер, я хочу менять статусы заказов клиентов & В списке заказов поддерживается изменение статуса \\ \hline
+US-10 & Как менеджер, я хочу импортировать каталог из Excel/CSV & Имеется страница импорта с предпросмотром и валидацией \\ \hline
+US-11 & Как менеджер, я хочу выгружать отчёт по продажам в Excel & Кнопка «Экспорт» формирует файл за выбранный период \\ \hline
+US-12 & Как менеджер, я хочу видеть товары с низким остатком & На рабочем столе виджет «Низкие остатки» (порог 3~шт.) \\ \hline
+\end{tabularx}
+\end{table}
+
+\begin{table}[ht!]
+\caption{Пользовательские истории для роли «Администратор»}
+\label{tab:us-adm}
+\small
+\begin{tabularx}{\textwidth}{|>{\centering\arraybackslash}p{0.06\textwidth}|>{\RaggedRight\arraybackslash}X|>{\RaggedRight\arraybackslash}X|}
+\hline
+\textbf{№} & \textbf{User story} & \textbf{Критерий приёмки} \\ \hline
+US-13 & Как админ, я хочу создавать учётные записи менеджеров и назначать роли & Страница списка пользователей с действиями «Создать», «Изменить роль» \\ \hline
+US-14 & Как админ, я хочу видеть выручку и прибыль за период & Дашборд с графиками и фильтром по датам \\ \hline
+US-15 & Как админ, я хочу управлять справочниками & Доступны CRUD-страницы для каждого справочника \\ \hline
+US-16 & Как админ, я хочу видеть журнал действий пользователей & Страница журнала с фильтрацией по пользователю и дате \\ \hline
+\end{tabularx}
+\end{table}
+
+\textbf{Описание ключевых сценариев.} Для иллюстрации работы системы рассмотрим два ключевых сценария.
+
+\emph{Сценарий 1. Оформление заказа сборки клиентом.} Клиент открывает страницу конфигуратора, последовательно выбирает процессор, материнскую плату, оперативную память, накопитель, видеокарту, блок питания и корпус. После каждого шага система фильтрует доступные позиции по совместимости и обновляет итоговую цену. По завершении выбора клиент добавляет сборку в корзину, открывает корзину и переходит к оформлению заказа. Система запрашивает контактные данные, способ оплаты и доставки, сохраняет заказ в статусе «Новый», уменьшает остатки выбранных комплектующих и отправляет уведомление менеджеру.
+
+\emph{Сценарий 2. Обработка заказа менеджером.} Менеджер на рабочем столе видит уведомление о новом заказе. Открыв заказ, проверяет состав сборки, фактическое наличие комплектующих и при необходимости связывается с клиентом. После сборки ПК менеджер изменяет статус заказа на «Готов к выдаче» --- система отправляет клиенту email с инструкциями. После передачи заказа менеджер устанавливает статус «Выполнен», фиксируя дату завершения.
+
+\subsection{Проектирование модели данных}
+
+Модель данных приложения разрабатывается с учётом сформулированных функциональных и нефункциональных требований. На логическом уровне выделено восемь основных сущностей: \emph{Пользователь, Категория комплектующих, Комплектующее, Сборка ПК, Состав сборки, Заказ, Позиция заказа} и \emph{Статус заказа}~\cite{markov2021}.
+
+ER-диаграмма приложения (рисунок~\ref{fig:er}) построена в нотации Crow's foot и содержит описанные сущности с атрибутами и связями. Каждая сущность имеет первичный ключ id и системные атрибуты created\_at / updated\_at. Между сущностями определены связи «один ко многим» (например, \emph{Категория}~--~\emph{Комплектующее}) и «многие ко многим», реализованные через ассоциативные таблицы build\_items и order\_items. Связи имеют ограничения целостности (ON DELETE CASCADE для дочерних записей сборки и заказа, ON DELETE RESTRICT для пользователей с активными заказами).
+
+\begin{figure}[ht!]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[
+    every node/.style={font=\footnotesize},
+    entity/.style 2 args={
+        draw=#1, line width=0.7pt,
+        rectangle split, rectangle split parts=2,
+        rectangle split draw splits=true,
+        rectangle split part fill={#1, white},
+        rectangle split part align={center, left},
+        rounded corners=3pt,
+        text width=2.6cm,
+        inner sep=4pt,
+        align=left,
+        blur shadow={shadow blur steps=3, shadow opacity=20},
+        label={[font=\footnotesize\bfseries, text=white, name=lbl-#2]center:{}},
+    },
+    entUser/.style   ={draw=brandPurple, line width=0.7pt, rectangle split, rectangle split parts=2, rectangle split draw splits=true, rectangle split part fill={brandPurple, white}, rectangle split part align={center, left}, rounded corners=3pt, text width=2.7cm, inner sep=4pt, align=left, blur shadow={shadow blur steps=3, shadow opacity=20}},
+    entOrder/.style  ={draw=brandOrange, line width=0.7pt, rectangle split, rectangle split parts=2, rectangle split draw splits=true, rectangle split part fill={brandOrange, white}, rectangle split part align={center, left}, rounded corners=3pt, text width=2.7cm, inner sep=4pt, align=left, blur shadow={shadow blur steps=3, shadow opacity=20}},
+    entBuild/.style  ={draw=brandTeal, line width=0.7pt, rectangle split, rectangle split parts=2, rectangle split draw splits=true, rectangle split part fill={brandTeal, white}, rectangle split part align={center, left}, rounded corners=3pt, text width=2.7cm, inner sep=4pt, align=left, blur shadow={shadow blur steps=3, shadow opacity=20}},
+    entProduct/.style={draw=brandBlue, line width=0.7pt, rectangle split, rectangle split parts=2, rectangle split draw splits=true, rectangle split part fill={brandBlue, white}, rectangle split part align={center, left}, rounded corners=3pt, text width=2.7cm, inner sep=4pt, align=left, blur shadow={shadow blur steps=3, shadow opacity=20}},
+    entRef/.style    ={draw=brandGreen, line width=0.7pt, rectangle split, rectangle split parts=2, rectangle split draw splits=true, rectangle split part fill={brandGreen, white}, rectangle split part align={center, left}, rounded corners=3pt, text width=2.7cm, inner sep=4pt, align=left, blur shadow={shadow blur steps=3, shadow opacity=20}},
+    rel/.style={font=\scriptsize, text=brandDark, fill=brandLight, inner sep=1.5pt},
+    link/.style={->, draw=brandDark!60, thick, >={Stealth[length=2.5mm]}},
+]
+% 3 строки × 3 колонки, шаг 4.5 см по X, шаг 5 см по Y
+% Верхний ряд: users, orders, order_items
+\node[entUser]   (users)       at (-4.5,  0) {\textcolor{white}{\bfseries users} \nodepart{second} \underline{\textbf{id}}\\ email \textcolor{brandRed}{(UQ)}\\ password\_hash\\ role\\ full\_name, phone\\ is\_active\\ created\_at};
+\node[entOrder]  (orders)      at (   0,  0) {\textcolor{white}{\bfseries orders} \nodepart{second} \underline{\textbf{id}}\\ client\_id \textcolor{brandRed}{(FK)}\\ build\_id \textcolor{brandRed}{(FK?)}\\ status\_id \textcolor{brandRed}{(FK)}\\ total\_sum\\ payment\_method\\ delivery\_method\\ created\_at};
+\node[entOrder]  (order_items) at ( 4.5,  0) {\textcolor{white}{\bfseries order\_items} \nodepart{second} \underline{\textbf{id}}\\ order\_id \textcolor{brandRed}{(FK)}\\ component\_id \textcolor{brandRed}{(FK)}\\ quantity\\ unit\_price};
+% Средний ряд: build_items, builds, order_statuses
+\node[entBuild]  (build_items) at (-4.5, -5) {\textcolor{white}{\bfseries build\_items} \nodepart{second} \underline{\textbf{id}}\\ build\_id \textcolor{brandRed}{(FK)}\\ component\_id \textcolor{brandRed}{(FK)}\\ quantity};
+\node[entBuild]  (builds)      at (   0, -5) {\textcolor{white}{\bfseries builds} \nodepart{second} \underline{\textbf{id}}\\ title\\ description\\ is\_template\\ is\_active\\ created\_by \textcolor{brandRed}{(FK)}\\ created\_at};
+\node[entRef]    (statuses)    at ( 4.5, -5) {\textcolor{white}{\bfseries order\_statuses} \nodepart{second} \underline{\textbf{id}}\\ code \textcolor{brandRed}{(UQ)}\\ title\\ color\\ sort\_order};
+% Нижний ряд: categories, components
+\node[entRef]    (categories)  at (-4.5, -10) {\textcolor{white}{\bfseries categories} \nodepart{second} \underline{\textbf{id}}\\ title \textcolor{brandRed}{(UQ)}\\ slug \textcolor{brandRed}{(UQ)}\\ description};
+\node[entProduct](components)  at (   0, -10) {\textcolor{white}{\bfseries components} \nodepart{second} \underline{\textbf{id}}\\ category\_id \textcolor{brandRed}{(FK)}\\ title, brand, model\\ specs (JSON)\\ purchase\_price\\ sale\_price\\ stock, image\\ is\_active};
+% Связи
+\draw[link] (users.east)            -- node[above, rel] {1\,—\,N}    (orders.west);
+\draw[link] (orders.east)           -- node[above, rel] {1\,—\,N}    (order_items.west);
+\draw[link] (orders.south)          -- node[right, rel] {N\,—\,1}    (builds.north);
+\draw[link] (statuses.north)        -- node[right, rel] {1\,—\,N}    (orders.south east);
+\draw[link] (builds.west)           -- node[above, rel] {1\,—\,N}    (build_items.east);
+\draw[link] (categories.east)       -- node[above, rel] {1\,—\,N}    (components.west);
+\draw[link] (components.north)      -- node[right, rel] {1\,—\,N}    (build_items.south);
+\draw[link] (components.north east) to[bend right=30] node[right, rel] {1\,—\,N} (order_items.south);
+\end{tikzpicture}%
+}
+\caption{ER-диаграмма базы данных (нотация Crow's foot)}
+\label{fig:er}
+\end{figure}
+
+В таблице~\ref{tab:db} приведён перечень основных таблиц физической схемы базы данных в формате PostgreSQL, в таблицах~\ref{tab:dd-users}--\ref{tab:dd-orders} --- словари данных для трёх ключевых сущностей.
+
+\begin{table}[ht!]
+\caption{Основные таблицы базы данных}
+\label{tab:db}
+\small
+\begin{tabularx}{\textwidth}{|>{\RaggedRight\arraybackslash}p{0.20\textwidth}|>{\RaggedRight\arraybackslash}p{0.30\textwidth}|>{\RaggedRight\arraybackslash}X|}
+\hline
+\textbf{Таблица} & \textbf{Назначение} & \textbf{Ключевые поля} \\ \hline
+users & Учётная запись пользователя & id, email, password\_hash, role, full\_name, phone, is\_active, created\_at \\ \hline
+categories & Справочник категорий комплектующих & id, title, slug, description \\ \hline
+components & Комплектующие (товары) & id, category\_id, title, brand, model, specs (JSON), purchase\_price, sale\_price, stock, image \\ \hline
+builds & Готовая или клиентская сборка ПК & id, title, description, total\_price, created\_by, created\_at \\ \hline
+build\_items & Состав сборки & id, build\_id, component\_id, quantity \\ \hline
+orders & Заказ клиента & id, client\_id, build\_id, total\_sum, status, payment\_method, created\_at \\ \hline
+order\_items & Позиции заказа & id, order\_id, component\_id, quantity, unit\_price \\ \hline
+order\_statuses & Справочник статусов заказа & id, code, title, color \\ \hline
+\end{tabularx}
+\end{table}
+
+\begin{table}[ht!]
+\caption{Словарь данных таблицы \texttt{users}}
+\label{tab:dd-users}
+\small
+\begin{tabularx}{\textwidth}{|>{\RaggedRight\arraybackslash}p{0.22\textwidth}|>{\RaggedRight\arraybackslash}p{0.20\textwidth}|>{\RaggedRight\arraybackslash}X|}
+\hline
+\textbf{Поле} & \textbf{Тип} & \textbf{Назначение и ограничения} \\ \hline
+id & SERIAL PK & Первичный ключ \\ \hline
+email & VARCHAR(254) UQ NOT NULL & Логин пользователя, индекс \\ \hline
+password\_hash & VARCHAR(128) NOT NULL & Хэш пароля (PBKDF2) \\ \hline
+role & VARCHAR(16) NOT NULL & client / manager / admin \\ \hline
+full\_name & VARCHAR(150) & Полное имя пользователя \\ \hline
+phone & VARCHAR(20) & Контактный телефон \\ \hline
+is\_active & BOOLEAN DEFAULT TRUE & Активна ли учётная запись \\ \hline
+created\_at & TIMESTAMP NOT NULL & Дата создания записи \\ \hline
+\end{tabularx}
+\end{table}
+
+\begin{table}[ht!]
+\caption{Словарь данных таблицы \texttt{components}}
+\label{tab:dd-components}
+\small
+\begin{tabularx}{\textwidth}{|>{\RaggedRight\arraybackslash}p{0.22\textwidth}|>{\RaggedRight\arraybackslash}p{0.20\textwidth}|>{\RaggedRight\arraybackslash}X|}
+\hline
+\textbf{Поле} & \textbf{Тип} & \textbf{Назначение и ограничения} \\ \hline
+id & SERIAL PK & Первичный ключ \\ \hline
+category\_id & INT FK & Ссылка на categories.id \\ \hline
+title & VARCHAR(200) NOT NULL & Наименование товара \\ \hline
+brand & VARCHAR(100) & Производитель \\ \hline
+model & VARCHAR(100) & Модель \\ \hline
+specs & JSONB & Технические характеристики \\ \hline
+purchase\_price & NUMERIC(10,2) & Закупочная цена \\ \hline
+sale\_price & NUMERIC(10,2) NOT NULL & Продажная цена, не менее 0 \\ \hline
+stock & INT NOT NULL DEFAULT 0 & Текущий остаток на складе \\ \hline
+image & VARCHAR(255) & Путь к изображению товара \\ \hline
+\end{tabularx}
+\end{table}
+
+\begin{table}[ht!]
+\caption{Словарь данных таблицы \texttt{orders}}
+\label{tab:dd-orders}
+\small
+\begin{tabularx}{\textwidth}{|>{\RaggedRight\arraybackslash}p{0.22\textwidth}|>{\RaggedRight\arraybackslash}p{0.20\textwidth}|>{\RaggedRight\arraybackslash}X|}
+\hline
+\textbf{Поле} & \textbf{Тип} & \textbf{Назначение и ограничения} \\ \hline
+id & SERIAL PK & Первичный ключ \\ \hline
+client\_id & INT FK NOT NULL & Ссылка на users.id \\ \hline
+build\_id & INT FK NULL & Опциональная ссылка на сборку \\ \hline
+total\_sum & NUMERIC(12,2) NOT NULL & Итоговая сумма заказа \\ \hline
+status & VARCHAR(16) NOT NULL & Код статуса заказа \\ \hline
+payment\_method & VARCHAR(20) NOT NULL & Способ оплаты \\ \hline
+delivery\_method & VARCHAR(20) NOT NULL & Способ получения \\ \hline
+delivery\_address & VARCHAR(255) & Адрес доставки \\ \hline
+created\_at & TIMESTAMP NOT NULL & Дата оформления заказа \\ \hline
+updated\_at & TIMESTAMP NOT NULL & Дата последнего обновления \\ \hline
+\end{tabularx}
+\end{table}
+
+Между сущностями устанавливаются следующие связи:
+\begin{itemize}
+    \item \emph{Категория} --- \emph{Комплектующее}: один ко многим;
+    \item \emph{Сборка} --- \emph{Состав сборки} --- \emph{Комплектующее}: «многие ко многим» через таблицу \texttt{build\_\allowbreak items};
+    \item \emph{Пользователь (клиент)} --- \emph{Заказ}: один ко многим;
+    \item \emph{Заказ} --- \emph{Позиция заказа} --- \emph{Комплектующее}: «многие ко многим» через таблицу \texttt{order\_\allowbreak items};
+    \item \emph{Заказ} --- \emph{Сборка}: необязательная связь «многие к одному»;
+    \item \emph{Заказ} --- \emph{Статус заказа}: «многие к одному» через справочник \texttt{order\_\allowbreak statuses}.
+\end{itemize}
+
+\textbf{Индексы и оптимизация запросов.} Для обеспечения быстрого поиска и фильтрации в каталоге товаров предусмотрены индексы по полям:
+\begin{itemize}
+    \item \texttt{components}\,.\,\texttt{category\_id} и \texttt{components}\,.\,\texttt{brand} --- для фильтров каталога;
+    \item GIN-индекс по полю \texttt{components}\,.\,\texttt{specs} (JSONB) --- для поиска по техническим характеристикам;
+    \item \texttt{orders}\,.\,\texttt{client\_id} и \texttt{orders}\,.\,\texttt{created\_at} --- для отчётности и личного кабинета;
+    \item уникальный индекс по полю \texttt{users}\,.\,\texttt{email} --- для быстрой авторизации и предотвращения дублирования учётных записей.
+\end{itemize}
+
+Физическая реализация осуществляется средствами миграций Django, что обеспечивает воспроизводимость структуры на любой среде разработки и развёртывания.
+
+\subsection{Разработка макетов страниц}
+
+На основе сформулированных функциональных требований, пользовательских сценариев и спроектированной модели данных разработаны макеты основных страниц веб-приложения. Прототипы выполняются в инструменте Figma. Основные страницы сгруппированы по ролям пользователей и связаны между собой картой переходов (таблица~\ref{tab:sitemap}).
+
+\begin{table}[ht!]
+\caption{Карта сайта по ролям пользователей}
+\label{tab:sitemap}
+\small
+\begin{tabularx}{\textwidth}{|>{\RaggedRight\arraybackslash}p{0.22\textwidth}|>{\RaggedRight\arraybackslash}p{0.20\textwidth}|>{\RaggedRight\arraybackslash}X|}
+\hline
+\textbf{Раздел} & \textbf{Доступ} & \textbf{Состав страниц} \\ \hline
+Публичная часть & Все & Главная, каталог, карточка товара, конфигуратор, регистрация, авторизация \\ \hline
+Личный кабинет клиента & Клиент, Админ & Дашборд, активные заказы, история, профиль, корзина \\ \hline
+Рабочее место менеджера & Менеджер, Админ & Рабочий стол, каталог, сборки, заказы, импорт/экспорт, отчёты \\ \hline
+Панель администратора & Админ & Пользователи, роли, справочники, аналитика, журнал \\ \hline
+\end{tabularx}
+\end{table}
+
+\emph{Главная страница} (рисунок~\ref{fig:wf-home}) состоит из «шапки» с логотипом и ссылками на каталог и конфигуратор, «героя» с описанием магазина и кнопкой «Собрать ПК», блока популярных сборок, блока акций и «подвала» со ссылками на разделы.
+
+\begin{figure}[ht!]
+\centering
+\begin{tikzpicture}[
+    wfHeader/.style={draw=brandBlue, line width=0.6pt, rectangle, rounded corners=4pt, fill=brandBlue, text=white, align=center, font=\small\bfseries, minimum height=0.8cm},
+    wfHero/.style={draw=brandOrange, line width=0.6pt, rectangle, rounded corners=6pt, fill=brandOrangeSoft, align=center, font=\small, minimum height=0.7cm},
+    wfBtn/.style={draw=brandOrange, line width=0.5pt, rectangle, rounded corners=4pt, fill=brandOrange, text=white, align=center, font=\small\bfseries},
+    wfCard/.style={draw=brandBlue!30, line width=0.5pt, rectangle, rounded corners=4pt, fill=white, align=center, font=\footnotesize, blur shadow={shadow blur steps=3, shadow opacity=15}},
+    wfCardAccent/.style={draw=brandTeal!50, line width=0.5pt, rectangle, rounded corners=4pt, fill=brandTealSoft, align=center, font=\footnotesize, blur shadow={shadow blur steps=3, shadow opacity=15}},
+    wfFooter/.style={draw=brandDark!30, line width=0.5pt, rectangle, rounded corners=4pt, fill=brandLight, align=center, font=\footnotesize, text=brandDark, minimum height=0.7cm},
+    wfLabel/.style={font=\small\bfseries, text=brandBlue, anchor=west},
+]
+\node[wfHeader, minimum width=14cm] at (0, 4) {Header: лого \ \ Каталог \ \ Конфигуратор \ \ Поиск \ \ Войти / Регистрация};
+\node[wfHero, minimum width=14cm, minimum height=2cm] at (0, 2.3) {«Соберите свой ПК под задачу»};
+\node[wfBtn, minimum width=3cm] at (4.5, 2.0) {Собрать ПК};
+\node[wfLabel] at (-7.0, 0.9) {Категории комплектующих};
+\node[wfCard, minimum width=3.2cm, minimum height=0.9cm] at (-5.3, 0.0) {CPU};
+\node[wfCard, minimum width=3.2cm, minimum height=0.9cm] at (-1.8, 0.0) {GPU};
+\node[wfCard, minimum width=3.2cm, minimum height=0.9cm] at ( 1.8, 0.0) {RAM};
+\node[wfCard, minimum width=3.2cm, minimum height=0.9cm] at ( 5.3, 0.0) {SSD};
+\node[wfLabel] at (-7.0, -1.1) {Готовые сборки};
+\node[wfCardAccent, minimum width=4.3cm, minimum height=1.6cm] at (-4.7, -2.2) {Сборка 1\\\textbf{74\,990~руб.} • [ Купить ]};
+\node[wfCardAccent, minimum width=4.3cm, minimum height=1.6cm] at ( 0.0, -2.2) {Сборка 2\\\textbf{105\,000~руб.} • [ Купить ]};
+\node[wfCardAccent, minimum width=4.3cm, minimum height=1.6cm] at ( 4.7, -2.2) {Сборка 3\\\textbf{152\,500~руб.} • [ Купить ]};
+\node[wfFooter, minimum width=14cm] at (0, -3.5) {Footer: контакты, соцсети, © pcshop};
+\end{tikzpicture}
+\caption{Wireframe главной страницы}
+\label{fig:wf-home}
+\end{figure}
+
+\emph{Каталог товаров} (рисунок~\ref{fig:wf-catalog}) содержит панель фильтров слева (категория, цена, бренд, характеристики, остаток) и сетку карточек с пагинацией. Каждая карточка показывает изображение, наименование, бренд, цену, остаток и кнопку «Добавить в корзину».
+
+\begin{figure}[ht!]
+\centering
+\begin{tikzpicture}[
+    wfHeader/.style={draw=brandBlue, line width=0.6pt, rectangle, rounded corners=4pt, fill=brandBlue, text=white, align=center, font=\small\bfseries, minimum height=0.8cm},
+    wfFilters/.style={draw=brandBlue!40, line width=0.5pt, rectangle, rounded corners=4pt, fill=brandBlueSoft, align=left, font=\footnotesize, inner sep=6pt, blur shadow={shadow blur steps=3, shadow opacity=15}},
+    wfCard/.style={draw=brandBlue!30, line width=0.5pt, rectangle, rounded corners=4pt, fill=white, align=center, font=\footnotesize, blur shadow={shadow blur steps=3, shadow opacity=15}},
+    wfPager/.style={draw=brandDark!30, line width=0.5pt, rectangle, rounded corners=4pt, fill=brandLight, align=center, font=\footnotesize, minimum height=0.7cm},
+]
+\node[wfHeader, minimum width=14cm] at (0, 4) {Header / Хлебные крошки: Главная $\rightarrow$ Каталог $\rightarrow$ Процессоры};
+\node[wfFilters, minimum width=3.8cm, minimum height=6cm, anchor=north west] at (-7, 3.4) {
+    \textbf{\textcolor{brandBlue}{Фильтры}}\\[4pt]
+    $\square$ Категория\\
+    $\square$ Бренд\\[4pt]
+    \textcolor{brandDark}{Цена,~руб.}\\
+    {[\,\_\_\_]\,—\,[\,\_\_\_]}\\[4pt]
+    $\square$ В наличии\\
+    $\square$ Низкий остаток\\[6pt]
+    \textcolor{brandOrange}{\textbf{[ Применить ]}}
+};
+\foreach \xi/\yi/\n in {-1.7/2.4/1, 1.5/2.4/2, 4.7/2.4/3, -1.7/0/4, 1.5/0/5, 4.7/0/6} {
+    \node[wfCard, minimum width=2.8cm, minimum height=2.2cm] at (\xi, \yi) {Карточка\\товара \n\\\\\textbf{\textcolor{brandOrange}{цена~руб.}}\\{[ В корзину ]}};
+}
+\node[wfPager, minimum width=9.5cm] at (1.5, -1.6) {Пагинация: \ \ \textbf{\textcolor{brandBlue}{1}} \ 2 \ 3 \ \ldots \ N};
+\end{tikzpicture}
+\caption{Wireframe страницы каталога товаров}
+\label{fig:wf-catalog}
+\end{figure}
+
+\emph{Конфигуратор сборки} (рисунок~\ref{fig:wf-config}) реализован как пошаговый мастер с подсветкой активного шага. На каждом шаге отображается панель выбора одной категории комплектующих, под ней --- сводка текущей сборки и итоговая сумма.
+
+\begin{figure}[ht!]
+\centering
+\begin{tikzpicture}[
+    wfHeader/.style={draw=brandBlue, line width=0.6pt, rectangle, rounded corners=4pt, fill=brandBlue, text=white, align=center, font=\small\bfseries, minimum height=0.8cm},
+    wstep/.style={draw=brandBlue!40, line width=0.5pt, rectangle, rounded corners=4pt, fill=brandBlueSoft, text=brandBlue, align=center, font=\footnotesize, minimum height=0.6cm, minimum width=1.5cm},
+    wstepActive/.style={draw=brandOrange, line width=0.7pt, rectangle, rounded corners=4pt, fill=brandOrange, text=white, align=center, font=\footnotesize\bfseries, minimum height=0.6cm, minimum width=1.5cm, blur shadow={shadow blur steps=3, shadow opacity=20}},
+    wstepDone/.style={draw=brandGreen, line width=0.5pt, rectangle, rounded corners=4pt, fill=brandGreenSoft, text=brandGreen, align=center, font=\footnotesize\bfseries, minimum height=0.6cm, minimum width=1.5cm},
+    panel/.style={draw=brandBlue!30, line width=0.5pt, rectangle, rounded corners=6pt, fill=white, align=left, font=\footnotesize, inner sep=8pt, blur shadow={shadow blur steps=3, shadow opacity=15}},
+    summary/.style={draw=brandOrange!60, line width=0.7pt, rectangle, rounded corners=6pt, fill=brandOrangeSoft, align=left, font=\footnotesize, inner sep=8pt, blur shadow={shadow blur steps=3, shadow opacity=20}},
+    navBtn/.style={draw=brandDark!30, line width=0.5pt, rectangle, rounded corners=4pt, fill=white, align=center, font=\footnotesize, minimum height=0.7cm, minimum width=3cm},
+    navBtnPrimary/.style={draw=brandOrange, line width=0.5pt, rectangle, rounded corners=4pt, fill=brandOrange, text=white, align=center, font=\footnotesize\bfseries, minimum height=0.7cm, minimum width=3cm},
+]
+\node[wfHeader, minimum width=14cm] at (0, 3.7) {Конфигуратор сборки ПК};
+\node[wstepDone]   at (-5.8, 2.6) {1. CPU};
+\node[wstepActive] at (-3.9, 2.6) {2. MB};
+\node[wstep]       at (-2.0, 2.6) {3. RAM};
+\node[wstep]       at (-0.1, 2.6) {4. SSD};
+\node[wstep]       at ( 1.8, 2.6) {5. GPU};
+\node[wstep]       at ( 3.7, 2.6) {6. PSU};
+\node[wstep]       at ( 5.6, 2.6) {7. Корпус};
+\node[panel, minimum width=9cm, minimum height=3.2cm, anchor=north west] at (-7, 1.8) {
+    \textbf{\textcolor{brandBlue}{Шаг 2. Материнская плата}}\\[4pt]
+    Фильтры: форм-фактор, чипсет, тип памяти, Wi-Fi.\\[4pt]
+    {[ Карточка платы 1 ] \ [ Карточка 2 ] \ [ Карточка 3 ]}\\
+    {[ Карточка платы 4 ] \ [ Карточка 5 ] \ [ Карточка 6 ]}\\[4pt]
+    \textcolor{brandOrange}{\textbf{[ Выбрать ]}}
+};
+\node[summary, minimum width=4.4cm, minimum height=3.2cm, anchor=north west] at ( 2.6, 1.8) {
+    \textbf{\textcolor{brandOrange}{Текущая сборка}}\\[4pt]
+    CPU: AMD 7700X \checkmark\\
+    MB: \emph{выбирается}\\
+    RAM: \_\_\_\\
+    SSD: \_\_\_\\
+    GPU: \_\_\_\\[4pt]
+    \textbf{Итого: 27\,990~руб.}
+};
+\node[navBtn]        at (-5.0, -2.5) {[ Назад ]};
+\node[navBtn]        at (-1.5, -2.5) {Сохранить сборку};
+\node[navBtnPrimary] at ( 2.0, -2.5) {Далее};
+\node[navBtnPrimary] at ( 5.5, -2.5) {Оформить заказ};
+\end{tikzpicture}
+\caption{Wireframe конфигуратора сборки ПК}
+\label{fig:wf-config}
+\end{figure}
+
+\emph{Корзина и оформление заказа} (рисунок~\ref{fig:wf-cart}) объединяет список добавленных товаров и сборок с возможностью изменения количества и удаления. Оформление выполняется одной страницей с секциями «Контактные данные», «Способ оплаты», «Способ получения» и итоговым блоком с кнопкой «Оформить заказ».
+
+\begin{figure}[ht!]
+\centering
+\begin{tikzpicture}[
+    wfHeader/.style={draw=brandBlue, line width=0.6pt, rectangle, rounded corners=4pt, fill=brandBlue, text=white, align=center, font=\small\bfseries, minimum height=0.8cm},
+    panel/.style={draw=brandBlue!30, line width=0.5pt, rectangle, rounded corners=6pt, fill=white, align=left, font=\footnotesize, inner sep=8pt, blur shadow={shadow blur steps=3, shadow opacity=15}},
+    summary/.style={draw=brandOrange!60, line width=0.8pt, rectangle, rounded corners=6pt, fill=brandOrangeSoft, align=left, font=\footnotesize, inner sep=8pt, blur shadow={shadow blur steps=3, shadow opacity=20}},
+    cta/.style={draw=brandOrange, line width=0.7pt, rectangle, rounded corners=4pt, fill=brandOrange, text=white, align=center, font=\footnotesize\bfseries, minimum height=0.8cm, minimum width=3.3cm},
+]
+\node[wfHeader, minimum width=14cm] at (0, 3.7) {Корзина и оформление заказа};
+\node[panel, minimum width=8.6cm, minimum height=2.2cm, anchor=north west] at (-7, 2.7) {
+    \textbf{\textcolor{brandBlue}{Товары в корзине}}\\[3pt]
+    1. \, Ryzen 7 7700X \, --- \, \textbf{27\,990~руб.} \, {[\,$-$ 1 $+$\,]} \, {[\,удалить\,]}\\
+    2. \, Сборка «Игровая средняя» \, --- \, \textbf{110\,000~руб.} \, {[\,удалить\,]}
+};
+\node[panel, minimum width=8.6cm, minimum height=3cm, anchor=north west] at (-7, 0.2) {
+    \textbf{\textcolor{brandBlue}{Контактные данные и доставка}}\\[3pt]
+    Email: \, \rule{4cm}{0.4pt}\\
+    Телефон: \, \rule{3.6cm}{0.4pt}\\[2pt]
+    \textbf{\textcolor{brandOrange}{Оплата:}} \ $\bullet$\,Картой \quad $\circ$\,СБП \quad $\circ$\,Наличные\\
+    \textbf{\textcolor{brandOrange}{Получение:}} \ $\bullet$\,Самовывоз \quad $\circ$\,Курьер
+};
+\node[summary, minimum width=4.6cm, minimum height=5.3cm, anchor=north west] at ( 2.2, 2.7) {
+    \textbf{\textcolor{brandOrange}{Итого}}\\[4pt]
+    Товары: 137\,990~руб.\\
+    Доставка: 0~руб.\\[6pt]
+    \rule{4cm}{0.4pt}\\[4pt]
+    \textbf{Сумма: \textcolor{brandBlue}{137\,990~руб.}}\\[12pt]
+};
+\node[cta] at (4.5, -1.6) {[ Оформить заказ ]};
+\end{tikzpicture}
+\caption{Wireframe корзины и оформления заказа}
+\label{fig:wf-cart}
+\end{figure}
+
+\emph{Личный кабинет клиента} (рисунок~\ref{fig:wf-client}) включает виджеты «Активные заказы» и «Сохранённые сборки», подробные блоки «История заказов» (таблица с фильтрами) и «Адреса доставки».
+
+\begin{figure}[ht!]
+\centering
+\begin{tikzpicture}[
+    wfHeader/.style={draw=brandBlue, line width=0.6pt, rectangle, rounded corners=4pt, fill=brandBlue, text=white, align=center, font=\small\bfseries, minimum height=0.8cm},
+    sidebar/.style={draw=brandBlue!40, line width=0.5pt, rectangle, rounded corners=6pt, fill=brandBlueSoft, align=left, font=\footnotesize, inner sep=8pt, blur shadow={shadow blur steps=3, shadow opacity=15}},
+    widgetA/.style={draw=brandBlue!40, line width=0.5pt, rectangle, rounded corners=6pt, fill=white, align=center, font=\footnotesize, minimum height=2.2cm, blur shadow={shadow blur steps=3, shadow opacity=15}},
+    widgetB/.style={draw=brandTeal!50, line width=0.5pt, rectangle, rounded corners=6pt, fill=brandTealSoft, align=center, font=\footnotesize, minimum height=2.2cm, blur shadow={shadow blur steps=3, shadow opacity=15}},
+    widgetC/.style={draw=brandGreen!50, line width=0.5pt, rectangle, rounded corners=6pt, fill=brandGreenSoft, align=center, font=\footnotesize, minimum height=2.4cm, blur shadow={shadow blur steps=3, shadow opacity=15}},
+    widgetD/.style={draw=brandOrange!60, line width=0.5pt, rectangle, rounded corners=6pt, fill=brandOrangeSoft, align=center, font=\footnotesize, minimum height=2.4cm, blur shadow={shadow blur steps=3, shadow opacity=15}},
+]
+\node[wfHeader, minimum width=14cm] at (0, 3.7) {Личный кабинет клиента};
+\node[sidebar, minimum width=3.2cm, minimum height=5.4cm, anchor=north west] at (-7, 2.7) {
+    \textbf{\textcolor{brandBlue}{Меню}}\\[4pt]
+    \textcolor{brandOrange}{$\bullet$ Дашборд}\\
+    $\bullet$ Активные заказы\\
+    $\bullet$ История\\
+    $\bullet$ Сохранённые сборки\\
+    $\bullet$ Адреса\\
+    $\bullet$ Профиль
+};
+\node[widgetA, minimum width=4.6cm] at (-1.2, 1.5) {Активные заказы\\[4pt]\textbf{\textcolor{brandBlue}{\Huge 2}}};
+\node[widgetB, minimum width=4.6cm] at ( 3.5, 1.5) {Сохранённые сборки\\[4pt]\textbf{\textcolor{brandTeal}{\Huge 5}}};
+\node[widgetC, minimum width=4.6cm] at (-1.2, -1.6) {История заказов\\(таблица с фильтрами)};
+\node[widgetD, minimum width=4.6cm] at ( 3.5, -1.6) {Адреса доставки};
+\end{tikzpicture}
+\caption{Wireframe личного кабинета клиента}
+\label{fig:wf-client}
+\end{figure}
+
+\emph{Рабочее место менеджера} (рисунок~\ref{fig:wf-manager}) включает виджеты «Новые заказы», «В работе», «Низкие остатки», а также таблицу заказов с поиском и фильтрами. Через основное меню доступны страницы каталога, сборок, импорта/экспорта и отчётов.
+
+\begin{figure}[ht!]
+\centering
+\begin{tikzpicture}[
+    wfHeader/.style={draw=brandOrange, line width=0.6pt, rectangle, rounded corners=4pt, fill=brandOrange, text=white, align=center, font=\small\bfseries, minimum height=0.8cm},
+    sidebar/.style={draw=brandOrange!50, line width=0.5pt, rectangle, rounded corners=6pt, fill=brandOrangeSoft, align=left, font=\footnotesize, inner sep=8pt, blur shadow={shadow blur steps=3, shadow opacity=15}},
+    widgetA/.style={draw=brandBlue!40, line width=0.5pt, rectangle, rounded corners=6pt, fill=brandBlueSoft, align=center, font=\footnotesize, minimum height=1.8cm, blur shadow={shadow blur steps=3, shadow opacity=15}},
+    widgetW/.style={draw=brandTeal!50, line width=0.5pt, rectangle, rounded corners=6pt, fill=brandTealSoft, align=center, font=\footnotesize, minimum height=1.8cm, blur shadow={shadow blur steps=3, shadow opacity=15}},
+    widgetWarn/.style={draw=brandRed, line width=0.7pt, rectangle, rounded corners=6pt, fill=brandRedSoft, align=center, font=\footnotesize, minimum height=1.8cm, blur shadow={shadow blur steps=3, shadow opacity=20}},
+    tablePanel/.style={draw=brandBlue!30, line width=0.5pt, rectangle, rounded corners=6pt, fill=white, align=center, font=\footnotesize, blur shadow={shadow blur steps=3, shadow opacity=15}},
+]
+\node[wfHeader, minimum width=14cm] at (0, 3.7) {Рабочее место менеджера};
+\node[sidebar, minimum width=3.2cm, minimum height=5.8cm, anchor=north west] at (-7, 2.7) {
+    \textbf{\textcolor{brandOrange}{Меню}}\\[4pt]
+    \textcolor{brandBlue}{$\bullet$ Рабочий стол}\\
+    $\bullet$ Каталог\\
+    $\bullet$ Сборки\\
+    $\bullet$ Заказы\\
+    $\bullet$ Импорт / экспорт\\
+    $\bullet$ Отчёты
+};
+\node[widgetA,    minimum width=3.0cm] at (-1.9, 1.5) {Новые заказы\\[4pt]\textbf{\textcolor{brandBlue}{\Huge 5}}};
+\node[widgetW,    minimum width=3.0cm] at ( 1.5, 1.5) {В работе\\[4pt]\textbf{\textcolor{brandTeal}{\Huge 12}}};
+\node[widgetWarn, minimum width=3.0cm] at ( 4.9, 1.5) {Низкие остатки\\[4pt]\textbf{\textcolor{brandRed}{\Huge 3}}};
+\node[tablePanel, minimum width=10cm, minimum height=3cm] at (1.5, -1.4) {
+    \textbf{\textcolor{brandBlue}{Таблица заказов}}: поиск, фильтры, статусы\\[8pt]
+    \begin{tabular}{|c|l|c|c|c|}
+        \hline
+        \textbf{№} & \textbf{Клиент} & \textbf{Сумма} & \textbf{Статус} & \textbf{Действия} \\ \hline
+        1021 & ivanov@... & 74\,990 & \textcolor{brandBlue}{Новый}    & [...] \\ \hline
+        1020 & petrov@... & 102\,500 & \textcolor{brandOrange}{В работе} & [...] \\ \hline
+    \end{tabular}
+};
+\end{tikzpicture}
+\caption{Wireframe рабочего места менеджера}
+\label{fig:wf-manager}
+\end{figure}
+
+\emph{Панель администратора} (рисунок~\ref{fig:wf-admin}) включает разделы «Пользователи», «Справочники», «Аналитика» и «Журнал действий». Основной экран аналитики содержит графики выручки и прибыли, таблицу топ-товаров и фильтры по периоду.
+
+\begin{figure}[ht!]
+\centering
+\begin{tikzpicture}[
+    wfHeader/.style={draw=brandPurple, line width=0.6pt, rectangle, rounded corners=4pt, fill=brandPurple, text=white, align=center, font=\small\bfseries, minimum height=0.8cm},
+    sidebar/.style={draw=brandPurple!50, line width=0.5pt, rectangle, rounded corners=6pt, fill=brandPurpleSoft, align=left, font=\footnotesize, inner sep=8pt, blur shadow={shadow blur steps=3, shadow opacity=15}},
+    chartBlue/.style={draw=brandBlue!40, line width=0.5pt, rectangle, rounded corners=6pt, fill=brandBlueSoft, align=center, font=\footnotesize, minimum height=2.8cm, blur shadow={shadow blur steps=3, shadow opacity=15}},
+    chartGreen/.style={draw=brandGreen!50, line width=0.5pt, rectangle, rounded corners=6pt, fill=brandGreenSoft, align=center, font=\footnotesize, minimum height=2.8cm, blur shadow={shadow blur steps=3, shadow opacity=15}},
+    tablePanel/.style={draw=brandPurple!30, line width=0.5pt, rectangle, rounded corners=6pt, fill=white, align=center, font=\footnotesize, blur shadow={shadow blur steps=3, shadow opacity=15}},
+]
+\node[wfHeader, minimum width=14cm] at (0, 3.7) {Панель администратора};
+\node[sidebar, minimum width=3.2cm, minimum height=5.8cm, anchor=north west] at (-7, 2.7) {
+    \textbf{\textcolor{brandPurple}{Меню}}\\[4pt]
+    $\bullet$ Пользователи\\
+    $\bullet$ Справочники\\
+    \textcolor{brandOrange}{$\bullet$ Аналитика}\\
+    $\bullet$ Журнал\\
+    $\bullet$ Настройки
+};
+\node[chartBlue, minimum width=4.7cm] (ch1) at (-1.4, 1.4) {};
+\node[font=\footnotesize\bfseries, text=brandBlue, anchor=north] at (ch1.north) {\,График выручки};
+\begin{scope}[shift={(ch1.center)}, xshift=-1.7cm, yshift=-0.5cm]
+    \draw[brandBlue!30, thin] (0,0) -- (3.4,0);
+    \draw[brandBlue!30, thin] (0,0) -- (0,1.2);
+    \draw[brandBlue, line width=1pt] (0,0.2) -- (0.7,0.6) -- (1.4,0.4) -- (2.1,0.9) -- (2.8,1.1) -- (3.4,0.7);
+    \foreach \x/\y in {0/0.2, 0.7/0.6, 1.4/0.4, 2.1/0.9, 2.8/1.1, 3.4/0.7}
+        \filldraw[brandBlue] (\x,\y) circle (1pt);
+\end{scope}
+\node[chartGreen, minimum width=4.7cm] (ch2) at ( 3.6, 1.4) {};
+\node[font=\footnotesize\bfseries, text=brandGreen, anchor=north] at (ch2.north) {\,График прибыли};
+\begin{scope}[shift={(ch2.center)}, xshift=-1.7cm, yshift=-0.5cm]
+    \draw[brandGreen!30, thin] (0,0) -- (3.4,0);
+    \foreach \x/\h in {0.2/0.6, 0.8/0.9, 1.4/0.4, 2.0/1.1, 2.6/0.8, 3.2/1.0}
+        \filldraw[brandGreen] (\x,0) rectangle (\x+0.35,\h);
+\end{scope}
+\node[tablePanel, minimum width=10cm, minimum height=2.8cm] at (1.5, -1.6) {
+    \textbf{\textcolor{brandPurple}{Топ-10 товаров за период}} \quad {\small[ Фильтр: месяц / квартал / год ]}\\[6pt]
+    \begin{tabular}{|l|c|c|c|}
+        \hline
+        \textbf{Товар} & \textbf{Продажи} & \textbf{Выручка} & \textbf{Маржа} \\ \hline
+        RTX 4070 SUPER & 24 & 1\,751\,760 & \textcolor{brandGreen}{+ 335\,760} \\ \hline
+        Ryzen 7 7700X  & 31 &   867\,690 & \textcolor{brandGreen}{+ 185\,690} \\ \hline
+    \end{tabular}
+};
+\end{tikzpicture}
+\caption{Wireframe панели администратора}
+\label{fig:wf-admin}
+\end{figure}
+
+При разработке макетов соблюдаются принципы: адаптивный дизайн (mobile first) на основе сетки Bootstrap~5; минимизация числа действий (оформление заказа за три перехода); единый визуальный стиль (общая цветовая палитра, типографика Roboto, набор иконок Bootstrap Icons); соблюдение требований доступности WCAG~2.1 AA; обратная связь пользователю (всплывающие уведомления, индикаторы загрузки, валидация форм). Основной цвет интерфейса --- глубокий синий (\#1F3B73), цвет акцента --- оранжевый (\#FF7A00), нейтральный фон --- светло-серый (\#F4F6F8).
+
+Полученные результаты проектирования --- ролевая модель, функциональные требования, модель данных и макеты основных страниц --- являются исходной базой для последующей программной реализации, описанной в третьей главе пояснительной записки.
