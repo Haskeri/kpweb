@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block title %}Профиль — pcshop{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <h1 class="h4 mb-1">Профиль</h1>
+                <p class="text-muted small mb-4">
+                    Роль: <span class="badge text-bg-primary">{{ user.get_role_display }}</span>
+                    <span class="ms-2">Email подтверждён при регистрации.</span>
+                </p>
+
+                <form method="post" novalidate>
+                    {% csrf_token %}
+
+                    {% for field in form %}
+                        <div class="mb-3">
+                            <label for="{{ field.id_for_label }}" class="form-label">
+                                {{ field.label }}
+                            </label>
+                            {{ field }}
+                            {% if field.errors %}
+                                <div class="invalid-feedback d-block">{{ field.errors }}</div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-accent">Сохранить</button>
+                        <a href="{% url 'accounts:password_change' %}" class="btn btn-outline-secondary">
+                            Сменить пароль
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4 mt-3 mt-lg-0">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="h6 text-muted">Учётная запись</h2>
+                <ul class="list-unstyled small mb-0">
+                    <li><strong>Зарегистрирован:</strong> {{ user.date_joined|date:"d.m.Y H:i" }}</li>
+                    <li><strong>Последний вход:</strong> {{ user.last_login|date:"d.m.Y H:i"|default:"—" }}</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

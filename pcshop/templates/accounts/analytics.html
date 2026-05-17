@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+
+{% block title %}Аналитика — pcshop{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h4 mb-0">Аналитика</h1>
+    <form method="get" class="d-flex gap-2">
+        <label class="form-label mb-0 align-self-center small text-muted">Период:</label>
+        <select name="days" class="form-select form-select-sm" onchange="this.form.submit()">
+            <option value="7"   {% if period_days == 7   %}selected{% endif %}>7 дней</option>
+            <option value="30"  {% if period_days == 30  %}selected{% endif %}>30 дней</option>
+            <option value="90"  {% if period_days == 90  %}selected{% endif %}>90 дней</option>
+            <option value="365" {% if period_days == 365 %}selected{% endif %}>год</option>
+        </select>
+    </form>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0" style="background: var(--brand-primary); color: white;">
+            <div class="card-body">
+                <h6 class="text-uppercase small">Заказов</h6>
+                <p class="display-6 fw-bold mb-0">{{ orders_count }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0" style="background: var(--brand-accent); color: white;">
+            <div class="card-body">
+                <h6 class="text-uppercase small">Выручка</h6>
+                <p class="display-6 fw-bold mb-0">{{ revenue|floatformat:0 }} ₽</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0" style="background: var(--brand-success); color: white;">
+            <div class="card-body">
+                <h6 class="text-uppercase small">Прибыль</h6>
+                <p class="display-6 fw-bold mb-0">{{ profit|floatformat:0 }} ₽</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 bg-light">
+            <div class="card-body">
+                <h6 class="text-uppercase small text-muted">Средний чек</h6>
+                <p class="display-6 fw-bold mb-0">{{ avg_order|floatformat:0 }} ₽</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-7">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">Топ-10 товаров по продажам</h5>
+                {% if top_components %}
+                    <table class="table table-sm align-middle">
+                        <thead><tr><th>Товар</th><th>Бренд</th><th class="text-end">Продано шт.</th><th class="text-end">Выручка</th></tr></thead>
+                        <tbody>
+                        {% for row in top_components %}
+                            <tr>
+                                <td>{{ row.component__title }}</td>
+                                <td>{{ row.component__brand }}</td>
+                                <td class="text-end">{{ row.qty }}</td>
+                                <td class="text-end">{{ row.revenue|floatformat:0 }} ₽</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p class="text-muted">За выбранный период продаж не зафиксировано.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">
+                    Низкие остатки
+                    {% if out_of_stock_count %}
+                        <span class="badge text-bg-danger ms-1">нет в наличии: {{ out_of_stock_count }}</span>
+                    {% endif %}
+                </h5>
+                {% if low_stock %}
+                    <ul class="list-group list-group-flush">
+                        {% for c in low_stock %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                <span>
+                                    <small class="text-muted">{{ c.category.title }}</small><br>
+                                    <a href="{% url 'catalog:edit' c.pk %}">{{ c }}</a>
+                                </span>
+                                <span class="badge {% if c.stock == 0 %}text-bg-danger{% else %}text-bg-warning{% endif %}">{{ c.stock }}</span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="text-muted">Все товары в достаточном количестве.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
