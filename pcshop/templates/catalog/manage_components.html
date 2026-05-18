@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+
+{% block title %}Управление каталогом — pcshop{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+    <h1 class="h4 mb-0">Каталог комплектующих</h1>
+    <div class="d-flex gap-2">
+        <a href="{% url 'catalog:create' %}" class="btn btn-accent btn-sm">
+            <i class="bi bi-plus-lg"></i> Добавить товар
+        </a>
+        <a href="{% url 'catalog:import' %}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-upload"></i> Импорт CSV
+        </a>
+        <a href="{% url 'catalog:export' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-download"></i> Экспорт CSV
+        </a>
+    </div>
+</div>
+
+<form method="get" class="mb-3">
+    <div class="input-group input-group-sm">
+        <input type="text" name="q" value="{{ request.GET.q }}" class="form-control" placeholder="Поиск по названию / бренду / модели">
+        <button class="btn btn-outline-secondary" type="submit">Найти</button>
+    </div>
+</form>
+
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>Категория</th>
+                <th>Товар</th>
+                <th>Цена</th>
+                <th>Остаток</th>
+                <th>Активно</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for c in components %}
+            <tr>
+                <td><small class="text-muted">{{ c.category.title }}</small></td>
+                <td><a href="{% url 'catalog:detail' c.pk %}">{{ c }}</a></td>
+                <td>{{ c.sale_price|floatformat:0 }} ₽</td>
+                <td>
+                    {% if c.stock == 0 %}
+                        <span class="badge text-bg-danger">нет</span>
+                    {% elif c.is_low_stock %}
+                        <span class="badge text-bg-warning">мало: {{ c.stock }}</span>
+                    {% else %}
+                        <span class="badge text-bg-success">{{ c.stock }}</span>
+                    {% endif %}
+                </td>
+                <td>{% if c.is_active %}<i class="bi bi-check-circle text-success"></i>{% else %}<i class="bi bi-x-circle text-danger"></i>{% endif %}</td>
+                <td class="text-end">
+                    <a href="{% url 'catalog:edit' c.pk %}" class="btn btn-sm btn-outline-primary">Изм.</a>
+                    <a href="{% url 'catalog:delete' c.pk %}" class="btn btn-sm btn-outline-danger">Удалить</a>
+                </td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="6" class="text-center text-muted">Каталог пуст.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if is_paginated %}
+    <nav>
+        <ul class="pagination">
+            {% if page_obj.has_previous %}<li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">«</a></li>{% endif %}
+            {% for i in paginator.page_range %}
+                <li class="page-item {% if i == page_obj.number %}active{% endif %}"><a class="page-link" href="?page={{ i }}">{{ i }}</a></li>
+            {% endfor %}
+            {% if page_obj.has_next %}<li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">»</a></li>{% endif %}
+        </ul>
+    </nav>
+{% endif %}
+{% endblock %}

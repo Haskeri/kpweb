@@ -1,0 +1,182 @@
+{% extends 'base.html' %}
+
+{% block title %}Каталог — pcshop{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1 class="h4 mb-0">Каталог комплектующих</h1>
+        {% if page_obj %}
+        <p class="text-muted small mb-0">
+            Найдено: {{ paginator.count }} позиц{{ paginator.count|pluralize:"ия,ии,ий" }}
+        </p>
+        {% endif %}
+    </div>
+    {% if user.is_authenticated and user.is_staff or user.is_authenticated and user.is_manager or user.is_authenticated and user.is_admin_role %}
+    <a href="{% url 'catalog:manage' %}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-tools me-1"></i>Управление
+    </a>
+    {% endif %}
+</div>
+
+<div class="row">
+    {# ── Фильтры ─────────────────────────────────────────────────────────── #}
+    <aside class="col-lg-3 mb-3">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h2 class="h6 text-uppercase text-muted mb-0">Фильтры</h2>
+                    {% if request.GET %}
+                    <a href="{% url 'catalog:list' %}" class="small text-danger text-decoration-none">
+                        <i class="bi bi-x-circle"></i> Сбросить
+                    </a>
+                    {% endif %}
+                </div>
+                <form method="get">
+                    {% for field in filter_form %}
+                    <div class="mb-3">
+                        {% if field.name == 'only_in_stock' %}
+                        <div class="form-check">
+                            {{ field }}
+                            <label class="form-check-label small" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        </div>
+                        {% else %}
+                        <label for="{{ field.id_for_label }}" class="form-label small fw-medium">{{ field.label }}</label>
+                        {{ field }}
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            <i class="bi bi-search me-1"></i>Применить
+                        </button>
+                        {% if request.GET %}
+                        <a href="{% url 'catalog:list' %}" class="btn btn-outline-secondary btn-sm">Сбросить</a>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        {# Категории #}
+        <div class="card mt-3">
+            <div class="card-body">
+                <h2 class="h6 text-uppercase text-muted mb-3">Категории</h2>
+                <div class="d-flex flex-column gap-1">
+                    <a href="{% url 'catalog:list' %}"
+                       class="text-decoration-none small py-1 px-2 rounded {% if not request.GET.category %}fw-semibold text-primary{% else %}text-body{% endif %}">
+                        Все категории
+                    </a>
+                    {% for cat in categories %}
+                    <a href="?category={{ cat.pk }}"
+                       class="text-decoration-none small py-1 px-2 rounded {% if request.GET.category == cat.pk|stringformat:'s' %}fw-semibold text-primary bg-light{% else %}text-body{% endif %}">
+                        {{ cat.title }}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    {# ── Список товаров ────────────────────────────────────────────────────── #}
+    <div class="col-lg-9">
+        {% if components %}
+        <div class="row g-3">
+            {% for c in components %}
+            <div class="col-md-6 col-xl-4">
+                <div class="card h-100 product-card">
+                    {# Изображение #}
+                    <a href="{% url 'catalog:detail' c.pk %}">
+                        {% if c.image %}
+                        <img src="{{ c.image.url }}" class="card-img-top"
+                             alt="{{ c.title }}"
+                             style="height:180px;object-fit:contain;padding:.75rem;background:#f9fafb;">
+                        {% else %}
+                        <div class="product-img-placeholder">
+                            {% if 'cpu' in c.category.slug %}<i class="bi bi-cpu-fill"></i>
+                            {% elif 'gpu' in c.category.slug %}<i class="bi bi-gpu-card"></i>
+                            {% elif 'ram' in c.category.slug %}<i class="bi bi-memory"></i>
+                            {% elif 'storage' in c.category.slug %}<i class="bi bi-device-hdd-fill"></i>
+                            {% elif 'psu' in c.category.slug %}<i class="bi bi-lightning-charge-fill"></i>
+                            {% elif 'case' in c.category.slug %}<i class="bi bi-box-seam"></i>
+                            {% elif 'mother' in c.category.slug %}<i class="bi bi-motherboard-fill"></i>
+                            {% elif 'cooling' in c.category.slug %}<i class="bi bi-wind"></i>
+                            {% else %}<i class="bi bi-pc-display"></i>{% endif %}
+                        </div>
+                        {% endif %}
+                    </a>
+
+                    <div class="card-body d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-start mb-1">
+                            <small class="text-muted">{{ c.category.title }}</small>
+                            {% if c.in_stock %}
+                                {% if c.is_low_stock %}
+                                <span class="badge text-bg-warning" title="Осталось мало">{{ c.stock }} шт.</span>
+                                {% else %}
+                                <span class="badge text-bg-success">В наличии</span>
+                                {% endif %}
+                            {% else %}
+                            <span class="badge text-bg-danger">Нет</span>
+                            {% endif %}
+                        </div>
+
+                        <h5 class="card-title h6 mb-1">
+                            <a href="{% url 'catalog:detail' c.pk %}" class="text-decoration-none text-body stretched-link">
+                                {{ c }}
+                            </a>
+                        </h5>
+
+                        <div class="mt-auto pt-2 d-flex justify-content-between align-items-center">
+                            <span class="fw-bold fs-5 text-primary">{{ c.sale_price|floatformat:0 }} ₽</span>
+                            {% if c.in_stock %}
+                            <form method="post" action="{% url 'orders:cart_add' %}" style="position:relative;z-index:1;">
+                                {% csrf_token %}
+                                <input type="hidden" name="component_id" value="{{ c.pk }}">
+                                <button type="submit" class="btn btn-sm btn-accent" title="Добавить в корзину">
+                                    <i class="bi bi-cart-plus"></i>
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        {# Пагинация с сохранением GET-параметров #}
+        {% if is_paginated %}
+        <nav class="mt-4" aria-label="Страницы каталога">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?{% for k,v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}">«</a>
+                </li>
+                {% endif %}
+                {% for i in paginator.page_range %}
+                <li class="page-item {% if i == page_obj.number %}active{% endif %}">
+                    <a class="page-link" href="?{% for k,v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}page={{ i }}">{{ i }}</a>
+                </li>
+                {% endfor %}
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?{% for k,v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}">»</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+
+        {% else %}
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-search" style="font-size:3rem;opacity:.3;"></i>
+                <p class="mt-3 mb-1 fw-semibold">Ничего не найдено</p>
+                <p class="text-muted small">Попробуйте изменить фильтры или
+                    <a href="{% url 'catalog:list' %}">сбросить</a> их.</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

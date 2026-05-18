@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block title %}Удаление товара — pcshop{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h1 class="h4">Удалить товар?</h1>
+                <p>Вы действительно хотите удалить товар <strong>{{ object }}</strong>?</p>
+                <p class="text-muted small">Действие необратимо. Связанные позиции в сборках и заказах сохранят ссылку на удалённую запись, поэтому удаление невозможно, если на товар есть активные ссылки.</p>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Удалить</button>
+                    <a href="{% url 'catalog:manage' %}" class="btn btn-outline-secondary">Отмена</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
