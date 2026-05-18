@@ -1,0 +1,147 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ component }} — pcshop{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'home' %}">Главная</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'catalog:list' %}">Каталог</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'catalog:list' %}?category={{ component.category.pk }}">{{ component.category.title }}</a></li>
+        <li class="breadcrumb-item active">{{ component.brand }} {{ component.model }}</li>
+    </ol>
+</nav>
+
+<div class="row g-4 mb-5">
+    {# ── Изображение ── #}
+    <div class="col-md-5">
+        <div class="card border-0 shadow-sm overflow-hidden" style="border-radius: var(--brand-radius);">
+            {% if component.image %}
+                <img src="{{ component.image.url }}" class="img-fluid w-100" alt="{{ component }}"
+                     style="object-fit: cover; max-height: 380px;">
+            {% else %}
+                <div class="d-flex align-items-center justify-content-center bg-light"
+                     style="height: 320px; font-size: 6rem; color: var(--brand-muted);">
+                    {% if 'cpu' in component.category.slug or 'процесс' in component.category.title|lower %}
+                        <i class="bi bi-cpu-fill" style="color: var(--brand-primary); opacity: .4;"></i>
+                    {% elif 'gpu' in component.category.slug or 'видео' in component.category.title|lower %}
+                        <i class="bi bi-gpu-card" style="color: #7C3AED; opacity: .4;"></i>
+                    {% elif 'ram' in component.category.slug or 'память' in component.category.title|lower %}
+                        <i class="bi bi-memory" style="color: var(--brand-success); opacity: .4;"></i>
+                    {% elif 'storage' in component.category.slug or 'накоп' in component.category.title|lower %}
+                        <i class="bi bi-device-hdd-fill" style="color: var(--brand-accent); opacity: .4;"></i>
+                    {% elif 'psu' in component.category.slug or 'питан' in component.category.title|lower %}
+                        <i class="bi bi-lightning-charge-fill" style="color: #EF4444; opacity: .4;"></i>
+                    {% elif 'mother' in component.category.slug or 'материн' in component.category.title|lower %}
+                        <i class="bi bi-motherboard-fill" style="color: var(--brand-primary); opacity: .4;"></i>
+                    {% else %}
+                        <i class="bi bi-pc-display" style="opacity: .2;"></i>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {# ── Описание + покупка ── #}
+    <div class="col-md-7">
+        <a href="{% url 'catalog:list' %}?category={{ component.category.pk }}"
+           class="badge text-bg-primary mb-2">{{ component.category.title }}</a>
+
+        <h1 class="h3 mb-1">{{ component.brand }} {{ component.model }}</h1>
+        {% if component.title != component.brand|add:" "|add:component.model %}
+            <p class="text-muted mb-3">{{ component.title }}</p>
+        {% endif %}
+
+        {# Наличие #}
+        <div class="mb-3 d-flex align-items-center gap-2">
+            {% if component.in_stock %}
+                {% if component.is_low_stock %}
+                    <span class="badge text-bg-warning"><i class="bi bi-exclamation-triangle me-1"></i>Мало: {{ component.stock }} шт.</span>
+                {% else %}
+                    <span class="badge text-bg-success"><i class="bi bi-check-circle me-1"></i>В наличии: {{ component.stock }} шт.</span>
+                {% endif %}
+            {% else %}
+                <span class="badge text-bg-danger"><i class="bi bi-x-circle me-1"></i>Нет в наличии</span>
+            {% endif %}
+        </div>
+
+        {# Цена #}
+        <div class="mb-4">
+            <span class="display-5 fw-bold" style="color: var(--brand-primary);">{{ component.sale_price|floatformat:0 }} ₽</span>
+        </div>
+
+        {# Добавить в корзину с выбором количества #}
+        {% if component.in_stock %}
+        <form method="post" action="{% url 'orders:cart_add' %}" class="mb-4">
+            {% csrf_token %}
+            <input type="hidden" name="component_id" value="{{ component.pk }}">
+            <div class="d-flex align-items-center gap-3 flex-wrap">
+                <div class="input-group" style="width: 140px;">
+                    <button type="button" class="btn btn-outline-secondary"
+                            onclick="let i=this.nextElementSibling;i.value=Math.max(1,+i.value-1)">−</button>
+                    <input type="number" name="quantity" value="1" min="1" max="{{ component.stock }}"
+                           class="form-control text-center" style="font-weight:600;">
+                    <button type="button" class="btn btn-outline-secondary"
+                            onclick="let i=this.previousElementSibling;i.value=Math.min({{ component.stock }},+i.value+1)">+</button>
+                </div>
+                <button type="submit" class="btn btn-accent btn-lg flex-grow-1">
+                    <i class="bi bi-cart-plus me-1"></i> В корзину
+                </button>
+            </div>
+        </form>
+        {% endif %}
+
+        {# Характеристики #}
+        {% if component.specs %}
+        <div class="card border-0" style="background: var(--brand-bg);">
+            <div class="card-body">
+                <h2 class="h6 text-uppercase text-muted mb-3" style="letter-spacing: .08em; font-size: .75rem;">
+                    <i class="bi bi-list-check me-1"></i>Характеристики
+                </h2>
+                <table class="table table-sm mb-0" style="background: transparent;">
+                    <tbody>
+                    {% for key, value in component.specs.items %}
+                        <tr>
+                            <td class="text-muted" style="width:50%; font-size: .9rem;">{{ key }}</td>
+                            <td class="fw-semibold" style="font-size: .9rem;">{{ value }}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{# ── Похожие товары ── #}
+{% if related %}
+<section class="mb-4">
+    <h2 class="h5 mb-3">Похожие товары в категории «{{ component.category.title }}»</h2>
+    <div class="row g-3">
+        {% for item in related %}
+        <div class="col-sm-6 col-lg-3">
+            <div class="card product-card h-100">
+                <div class="product-img-placeholder" style="height: 120px; font-size: 2rem;">
+                    {% if 'cpu' in item.category.slug %}<i class="bi bi-cpu-fill" style="color:var(--brand-primary);opacity:.5;"></i>
+                    {% elif 'gpu' in item.category.slug %}<i class="bi bi-gpu-card" style="color:#7C3AED;opacity:.5;"></i>
+                    {% elif 'ram' in item.category.slug %}<i class="bi bi-memory" style="color:var(--brand-success);opacity:.5;"></i>
+                    {% elif 'storage' in item.category.slug %}<i class="bi bi-device-hdd-fill" style="color:var(--brand-accent);opacity:.5;"></i>
+                    {% else %}<i class="bi bi-pc-display" style="opacity:.3;"></i>{% endif %}
+                </div>
+                <div class="card-body d-flex flex-column">
+                    <p class="card-text text-muted small mb-1">{{ item.brand }}</p>
+                    <h6 class="card-title mb-2 flex-grow-1">{{ item.title|truncatechars:60 }}</h6>
+                    <div class="d-flex justify-content-between align-items-center mt-auto">
+                        <span class="fw-bold">{{ item.sale_price|floatformat:0 }} ₽</span>
+                        <a href="{% url 'catalog:detail' item.pk %}" class="btn btn-outline-primary btn-sm">Открыть</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+{% endblock %}
