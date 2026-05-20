@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+
+{% block title %}Оформление заказа — pcshop{% endblock %}
+
+{% block content %}
+{# ── Шаги оформления ── #}
+<div class="d-flex align-items-center gap-0 mb-4">
+    <div class="d-flex align-items-center gap-2 text-muted small">
+        <span class="d-inline-flex align-items-center justify-content-center rounded-circle"
+              style="width:28px;height:28px;background:var(--brand-border);color:var(--brand-muted);font-weight:700;">1</span>
+        Корзина
+    </div>
+    <div style="flex:1;height:2px;background:var(--brand-border);margin:0 .75rem;"></div>
+    <div class="d-flex align-items-center gap-2 small fw-semibold" style="color:var(--brand-primary);">
+        <span class="d-inline-flex align-items-center justify-content-center rounded-circle"
+              style="width:28px;height:28px;background:var(--brand-primary);color:white;font-weight:700;">2</span>
+        Оформление
+    </div>
+    <div style="flex:1;height:2px;background:var(--brand-border);margin:0 .75rem;"></div>
+    <div class="d-flex align-items-center gap-2 text-muted small">
+        <span class="d-inline-flex align-items-center justify-content-center rounded-circle"
+              style="width:28px;height:28px;background:var(--brand-border);color:var(--brand-muted);font-weight:700;">3</span>
+        Готово
+    </div>
+</div>
+
+<form method="post">
+    {% csrf_token %}
+    <div class="row g-4">
+        <div class="col-lg-8">
+
+            {# Контактные данные #}
+            <div class="card mb-3">
+                <div class="card-header">
+                    <span class="fw-semibold"><i class="bi bi-person me-2"></i>Контактные данные</span>
+                </div>
+                <div class="card-body">
+                    <div class="row g-2">
+                        <div class="col-sm-6">
+                            <p class="mb-1 text-muted small">Email</p>
+                            <p class="fw-semibold mb-0">{{ user.email }}</p>
+                        </div>
+                        {% if user.full_name %}
+                        <div class="col-sm-6">
+                            <p class="mb-1 text-muted small">Имя</p>
+                            <p class="fw-semibold mb-0">{{ user.full_name }}</p>
+                        </div>
+                        {% endif %}
+                        {% if user.phone %}
+                        <div class="col-sm-6 mt-2">
+                            <p class="mb-1 text-muted small">Телефон</p>
+                            <p class="fw-semibold mb-0">{{ user.phone }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <p class="small text-muted mt-2 mb-0">
+                        <i class="bi bi-pencil me-1"></i>
+                        <a href="{% url 'accounts:profile' %}">Изменить данные в профиле</a>
+                    </p>
+                </div>
+            </div>
+
+            {# Оплата и доставка #}
+            <div class="card mb-3">
+                <div class="card-header">
+                    <span class="fw-semibold"><i class="bi bi-credit-card me-2"></i>Оплата и получение</span>
+                </div>
+                <div class="card-body">
+                    {% for field in form %}
+                    <div class="mb-3">
+                        <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.help_text %}
+                            <div class="form-text">{{ field.help_text }}</div>
+                        {% endif %}
+                        {% if field.errors %}
+                            <div class="invalid-feedback d-block">{{ field.errors|join:" " }}</div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        {# ── Итог ── #}
+        <div class="col-lg-4">
+            <div class="card shadow-sm sticky-top" style="top: 5.5rem;">
+                <div class="card-header">
+                    <span class="fw-semibold"><i class="bi bi-receipt me-1"></i>Ваш заказ</span>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-3">
+                        {% for line in component_lines %}
+                        <li class="d-flex justify-content-between align-items-center py-1 border-bottom">
+                            <span class="small text-muted">{{ line.component|truncatechars:32 }} × {{ line.quantity }}</span>
+                            <span class="small fw-semibold">{{ line.subtotal|floatformat:0 }} ₽</span>
+                        </li>
+                        {% endfor %}
+                        {% for line in build_lines %}
+                        <li class="d-flex justify-content-between align-items-center py-1 border-bottom">
+                            <span class="small text-muted">{{ line.build.title|truncatechars:32 }} × {{ line.quantity }}</span>
+                            <span class="small fw-semibold">{{ line.subtotal|floatformat:0 }} ₽</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    <div class="d-flex justify-content-between fw-bold mb-4">
+                        <span>Итого</span>
+                        <span class="fs-5">{{ total|floatformat:0 }} ₽</span>
+                    </div>
+                    <button class="btn btn-accent w-100 btn-lg" type="submit">
+                        <i class="bi bi-check-circle me-1"></i> Подтвердить заказ
+                    </button>
+                    <a class="btn btn-link w-100 mt-2 text-muted small" href="{% url 'orders:cart' %}">
+                        <i class="bi bi-arrow-left me-1"></i> Изменить корзину
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}
