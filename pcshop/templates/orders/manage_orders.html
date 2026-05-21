@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+
+{% block title %}Управление заказами — pcshop{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h4 mb-0">Заказы</h1>
+    <a href="{% url 'orders:export' %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-download"></i> Экспорт CSV</a>
+</div>
+
+<form method="get" class="row g-2 mb-3">
+    <div class="col-md-4">
+        <input type="text" name="q" value="{{ request.GET.q }}" class="form-control" placeholder="Email / имя / №">
+    </div>
+    <div class="col-md-3">
+        <select name="status" class="form-select">
+            <option value="">Все статусы</option>
+            {% for s in statuses %}
+                <option value="{{ s.pk }}" {% if request.GET.status == s.pk|stringformat:"s" %}selected{% endif %}>{{ s.title }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-2"><button class="btn btn-outline-primary w-100">Найти</button></div>
+</form>
+
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead class="table-light">
+            <tr><th>№</th><th>Дата</th><th>Клиент</th><th>Сумма</th><th>Оплата</th><th>Статус</th><th></th></tr>
+        </thead>
+        <tbody>
+        {% for o in orders %}
+            <tr>
+                <td><a href="{% url 'orders:detail' o.pk %}">#{{ o.pk }}</a></td>
+                <td>{{ o.created_at|date:"d.m.Y" }}</td>
+                <td>{{ o.client.full_name|default:o.client.email }}</td>
+                <td>{{ o.total_sum|floatformat:0 }} ₽</td>
+                <td>{{ o.get_payment_method_display }}</td>
+                <td>
+                    <form method="post" action="{% url 'orders:manage_status' o.pk %}" class="d-flex gap-1">
+                        {% csrf_token %}
+                        <select name="status" class="form-select form-select-sm">
+                            {% for s in statuses %}
+                                <option value="{{ s.pk }}" {% if s.pk == o.status.pk %}selected{% endif %}>{{ s.title }}</option>
+                            {% endfor %}
+                        </select>
+                        <button class="btn btn-sm btn-outline-primary">OK</button>
+                    </form>
+                </td>
+                <td><a href="{% url 'orders:detail' o.pk %}" class="btn btn-sm btn-link">Открыть</a></td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="7" class="text-center text-muted">Заказов не найдено.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if is_paginated %}
+    <nav>
+        <ul class="pagination">
+            {% if page_obj.has_previous %}<li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">«</a></li>{% endif %}
+            {% for i in paginator.page_range %}
+                <li class="page-item {% if i == page_obj.number %}active{% endif %}"><a class="page-link" href="?page={{ i }}">{{ i }}</a></li>
+            {% endfor %}
+            {% if page_obj.has_next %}<li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">»</a></li>{% endif %}
+        </ul>
+    </nav>
+{% endif %}
+{% endblock %}
