@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+
+{% block title %}Заказ №{{ order.pk }} — pcshop{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'home' %}">Главная</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'orders:list' %}">Мои заказы</a></li>
+        <li class="breadcrumb-item active">Заказ №{{ order.pk }}</li>
+    </ol>
+</nav>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+        <h1 class="h4 mb-1">Заказ №{{ order.pk }}</h1>
+        <p class="text-muted mb-0 small">
+            <i class="bi bi-calendar3 me-1"></i>{{ order.created_at|date:"d.m.Y H:i" }}
+        </p>
+    </div>
+    <span class="badge fs-6 px-3 py-2 rounded-pill"
+          style="background: {{ order.status.color }}; color: white;">
+        {{ order.status.title }}
+    </span>
+</div>
+
+<div class="row g-4">
+    {# ── Состав заказа ── #}
+    <div class="col-lg-8">
+        <div class="card mb-3">
+            <div class="card-header">
+                <span class="fw-semibold"><i class="bi bi-list-ul me-1"></i>Состав заказа</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Комплектующее</th>
+                            <th class="text-center">Кол-во</th>
+                            <th class="text-end">Цена</th>
+                            <th class="text-end">Сумма</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for item in order.items.all %}
+                        <tr>
+                            <td>
+                                <span class="fw-semibold">{{ item.component }}</span>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge text-bg-secondary">{{ item.quantity }}</span>
+                            </td>
+                            <td class="text-end text-muted">{{ item.unit_price|floatformat:0 }} ₽</td>
+                            <td class="text-end fw-bold">{{ item.subtotal|floatformat:0 }} ₽</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                    <tfoot style="background: var(--brand-bg);">
+                        <tr>
+                            <th colspan="3" class="text-end text-muted">Итого:</th>
+                            <th class="text-end fs-5">{{ order.total_sum|floatformat:0 }} ₽</th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        {# Смена статуса для менеджера #}
+        {% if user.is_authenticated and user.is_staff or user.is_authenticated and user.is_manager or user.is_authenticated and user.is_admin_role %}
+        <div class="card">
+            <div class="card-header">
+                <span class="fw-semibold"><i class="bi bi-arrow-repeat me-1"></i>Изменить статус</span>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{% url 'orders:manage_status' order.pk %}" class="d-flex gap-2 flex-wrap">
+                    {% csrf_token %}
+                    <select name="status" class="form-select" style="max-width: 240px;">
+                        {% for status in all_statuses %}
+                        <option value="{{ status.pk }}" {% if status.pk == order.status.pk %}selected{% endif %}>
+                            {{ status.title }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    {# ── Детали ── #}
+    <div class="col-lg-4">
+        <div class="card mb-3">
+            <div class="card-header">
+                <span class="fw-semibold"><i class="bi bi-info-circle me-1"></i>Детали заказа</span>
+            </div>
+            <div class="card-body">
+                <dl class="row mb-0" style="font-size: .9rem;">
+                    <dt class="col-5 text-muted fw-normal">Клиент</dt>
+                    <dd class="col-7 fw-semibold">{{ order.client.full_name|default:order.client.email }}</dd>
+
+                    <dt class="col-5 text-muted fw-normal">Оплата</dt>
+                    <dd class="col-7">{{ order.get_payment_method_display }}</dd>
+
+                    <dt class="col-5 text-muted fw-normal">Получение</dt>
+                    <dd class="col-7">{{ order.get_delivery_method_display }}</dd>
+
+                    {% if order.delivery_address %}
+                    <dt class="col-5 text-muted fw-normal">Адрес</dt>
+                    <dd class="col-7">{{ order.delivery_address }}</dd>
+                    {% endif %}
+
+                    {% if order.build %}
+                    <dt class="col-5 text-muted fw-normal">Сборка</dt>
+                    <dd class="col-7">
+                        <a href="{% url 'builds:detail' order.build.pk %}">{{ order.build.title }}</a>
+                    </dd>
+                    {% endif %}
+
+                    {% if order.comment %}
+                    <dt class="col-5 text-muted fw-normal">Комментарий</dt>
+                    <dd class="col-7 text-muted">{{ order.comment }}</dd>
+                    {% endif %}
+                </dl>
+            </div>
+        </div>
+
+        <a class="btn btn-outline-secondary w-100" href="{% url 'orders:list' %}">
+            <i class="bi bi-arrow-left me-1"></i> Все мои заказы
+        </a>
+    </div>
+</div>
+{% endblock %}
