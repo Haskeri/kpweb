@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ build.title }} — pcshop{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <h1 class="h4 mb-3">{{ build.title }}</h1>
+        {% if build.description %}
+            <p>{{ build.description|linebreaksbr }}</p>
+        {% endif %}
+
+        <h2 class="h6 text-muted mt-4">Состав сборки</h2>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr><th>Категория</th><th>Комплектующее</th><th class="text-end">Цена</th><th class="text-end">Кол-во</th><th class="text-end">Сумма</th></tr>
+                </thead>
+                <tbody>
+                {% for item in build.items.all %}
+                    <tr>
+                        <td><small class="text-muted">{{ item.component.category }}</small></td>
+                        <td><a href="{% url 'catalog:detail' item.component.pk %}">{{ item.component }}</a></td>
+                        <td class="text-end">{{ item.component.sale_price|floatformat:0 }} ₽</td>
+                        <td class="text-end">{{ item.quantity }}</td>
+                        <td class="text-end">{{ item.subtotal|floatformat:0 }} ₽</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr class="table-light">
+                        <th colspan="4" class="text-end">Итого:</th>
+                        <th class="text-end">{{ build.total_price|floatformat:0 }} ₽</th>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card shadow-sm sticky-top" style="top: 6rem;">
+            <div class="card-body">
+                <h5 class="card-title">Заказ сборки</h5>
+                <p class="display-6 fw-bold">{{ build.total_price|floatformat:0 }} ₽</p>
+                {% if user.is_authenticated %}
+                    <form method="post" action="{% url 'orders:cart_add_build' build.pk %}">
+                        {% csrf_token %}
+                        <button class="btn btn-accent w-100">
+                            <i class="bi bi-cart-plus"></i> Добавить в корзину
+                        </button>
+                    </form>
+                {% else %}
+                    <a href="{% url 'accounts:login' %}?next={{ request.path }}" class="btn btn-accent w-100">Войти, чтобы заказать</a>
+                {% endif %}
+                <a href="{% url 'builds:list' %}" class="btn btn-link w-100 mt-2">← Все сборки</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

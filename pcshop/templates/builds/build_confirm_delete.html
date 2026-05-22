@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-body text-center">
+                <i class="bi bi-exclamation-triangle" style="font-size: 3rem; color: var(--brand-danger);"></i>
+                <h1 class="h5 mt-2">Удалить сборку «{{ build.title }}»?</h1>
+                <p class="text-muted">Действие необратимо. Позиции состава сборки также будут удалены.</p>
+                <form method="post" class="d-inline-flex gap-2 justify-content-center">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Удалить</button>
+                    <a href="{% url 'builds:manage' %}" class="btn btn-outline-secondary">Отмена</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

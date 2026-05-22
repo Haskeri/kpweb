@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block title %}Управление сборками — pcshop{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h4 mb-0">Сборки ПК</h1>
+    <a href="{% url 'builds:create' %}" class="btn btn-accent btn-sm"><i class="bi bi-plus-lg"></i> Новая сборка</a>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead class="table-light">
+            <tr><th>Название</th><th>Позиций</th><th>Цена</th><th>Шаблон</th><th>Активна</th><th></th></tr>
+        </thead>
+        <tbody>
+        {% for build in builds %}
+            <tr>
+                <td><a href="{% url 'builds:detail' build.pk %}">{{ build.title }}</a></td>
+                <td>{{ build.items_count }}</td>
+                <td>{{ build.total_price|floatformat:0 }} ₽</td>
+                <td>{% if build.is_template %}<i class="bi bi-check-circle text-success"></i>{% else %}—{% endif %}</td>
+                <td>{% if build.is_active %}<i class="bi bi-check-circle text-success"></i>{% else %}<i class="bi bi-x-circle text-danger"></i>{% endif %}</td>
+                <td class="text-end">
+                    <a href="{% url 'builds:edit' build.pk %}" class="btn btn-sm btn-outline-primary">Изм.</a>
+                    <a href="{% url 'builds:delete' build.pk %}" class="btn btn-sm btn-outline-danger">Удалить</a>
+                </td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="6" class="text-center text-muted">Сборок пока нет.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

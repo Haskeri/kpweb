@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if build %}Редактирование сборки{% else %}Новая сборка{% endif %} — pcshop{% endblock %}
+
+{% block content %}
+<h1 class="h4 mb-3">{% if build %}Сборка «{{ build.title }}»{% else %}Новая сборка{% endif %}</h1>
+
+<form method="post">
+    {% csrf_token %}
+
+    <div class="card shadow-sm mb-3">
+        <div class="card-body">
+            {% for field in form %}
+                <div class="mb-3">
+                    {% if field.name == 'is_template' or field.name == 'is_active' %}
+                        <div class="form-check">
+                            {{ field }}
+                            <label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        </div>
+                    {% else %}
+                        <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                        {{ field }}
+                    {% endif %}
+                    {% if field.errors %}<div class="invalid-feedback d-block">{{ field.errors }}</div>{% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-3">
+        <div class="card-body">
+            <h5 class="card-title">Состав сборки</h5>
+            {{ formset.management_form }}
+            <div class="table-responsive">
+                <table class="table align-middle">
+                    <thead><tr><th>Комплектующее</th><th>Количество</th><th>Удалить</th></tr></thead>
+                    <tbody>
+                    {% for f in formset %}
+                        <tr>
+                            <td>{{ f.component }}{% for err in f.component.errors %}<div class="text-danger small">{{ err }}</div>{% endfor %}</td>
+                            <td>{{ f.quantity }}</td>
+                            <td>{% if f.instance.pk %}{{ f.DELETE }}{% endif %}{{ f.id }}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% if formset.non_form_errors %}
+                <div class="alert alert-danger">{{ formset.non_form_errors }}</div>
+            {% endif %}
+            <p class="text-muted small mb-0">Чтобы добавить ещё позицию — сохраните сборку и зайдите в редактирование снова.</p>
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-accent">Сохранить</button>
+    <a href="{% url 'builds:manage' %}" class="btn btn-outline-secondary">Отмена</a>
+</form>
+{% endblock %}
