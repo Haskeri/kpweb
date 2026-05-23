@@ -1,0 +1,651 @@
+{% extends 'base.html' %}
+
+{% block title %}Конфигуратор сборки ПК — pcshop{% endblock %}
+
+{% block extra_head %}
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.5/dist/cdn.min.js"></script>
+<style>
+    /* === Конфигуратор === */
+    .cfg-hero {
+        background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 50%, #EC4899 100%);
+        border-radius: 16px;
+        color: white;
+        padding: 2rem 2.5rem;
+        position: relative;
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+    }
+    .cfg-hero::after {
+        content: '';
+        position: absolute; right: -100px; top: -100px;
+        width: 400px; height: 400px;
+        background: radial-gradient(circle, rgba(255,255,255,.18), transparent 70%);
+    }
+    .cfg-hero h1 { font-size: 2rem; font-weight: 800; margin: 0; letter-spacing: -0.02em; }
+
+    /* Шаги */
+    .cfg-stepper {
+        display: flex; gap: 0.5rem;
+        overflow-x: auto;
+        padding: 0.5rem 0 1rem 0;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+    }
+    .cfg-stepper::-webkit-scrollbar { display: none; }
+    .cfg-step {
+        flex: 1 0 130px;
+        min-width: 130px;
+        background: white;
+        border: 2px solid var(--brand-border);
+        border-radius: 12px;
+        padding: 0.85rem 0.75rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        scroll-snap-align: start;
+        position: relative;
+    }
+    .cfg-step:hover { border-color: var(--brand-primary); transform: translateY(-2px); }
+    .cfg-step.active {
+        border-color: var(--brand-primary);
+        background: var(--brand-primary-light);
+        box-shadow: 0 4px 12px rgba(79,70,229,0.15);
+    }
+    .cfg-step.done {
+        border-color: var(--brand-success);
+        background: #ECFDF5;
+    }
+    .cfg-step .step-num {
+        display: inline-flex;
+        width: 28px; height: 28px;
+        border-radius: 50%;
+        background: var(--brand-bg);
+        align-items: center; justify-content: center;
+        font-weight: 700;
+        font-size: 0.85rem;
+        margin-bottom: 0.4rem;
+    }
+    .cfg-step.active .step-num { background: var(--brand-primary); color: white; }
+    .cfg-step.done .step-num { background: var(--brand-success); color: white; }
+    .cfg-step .step-icon { font-size: 1.4rem; color: var(--brand-muted); display: block; margin-bottom: 0.2rem; }
+    .cfg-step.active .step-icon, .cfg-step.done .step-icon { color: var(--brand-primary); }
+    .cfg-step.done .step-icon { color: var(--brand-success); }
+    .cfg-step .step-title { font-size: 0.8rem; font-weight: 600; color: var(--brand-text); }
+    .cfg-step .step-meta { font-size: 0.7rem; color: var(--brand-muted); margin-top: 0.15rem; }
+
+    /* Прогресс-бар */
+    .cfg-progress {
+        height: 6px;
+        background: var(--brand-border);
+        border-radius: 4px;
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+    }
+    .cfg-progress-bar {
+        height: 100%;
+        background: linear-gradient(90deg, var(--brand-primary), #7C3AED, #EC4899);
+        border-radius: 4px;
+        transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* Карточки комплектующих */
+    .cfg-component-card {
+        background: white;
+        border: 2px solid var(--brand-border);
+        border-radius: 12px;
+        padding: 1rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        position: relative;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+    .cfg-component-card:hover {
+        border-color: var(--brand-primary);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 16px rgba(0,0,0,.06);
+    }
+    .cfg-component-card.selected {
+        border-color: var(--brand-primary);
+        background: var(--brand-primary-light);
+    }
+    .cfg-component-card.incompatible {
+        opacity: 0.5;
+        filter: grayscale(0.5);
+        cursor: not-allowed;
+    }
+    .cfg-component-card.incompatible:hover { transform: none; border-color: var(--brand-border); }
+    .cfg-badge-incompat {
+        position: absolute; top: 0.5rem; right: 0.5rem;
+        background: var(--brand-danger); color: white;
+        font-size: 0.7rem; padding: 0.2em 0.55em; border-radius: 4px;
+    }
+    .cfg-badge-recommended {
+        position: absolute; top: 0.5rem; right: 0.5rem;
+        background: linear-gradient(135deg, #F59E0B, #EF4444); color: white;
+        font-size: 0.7rem; padding: 0.2em 0.55em; border-radius: 4px;
+        font-weight: 600;
+    }
+    .cfg-spec-row { font-size: 0.78rem; color: var(--brand-muted); display: flex; justify-content: space-between; }
+    .cfg-component-price { font-size: 1.15rem; font-weight: 700; color: var(--brand-text); }
+
+    /* Sidebar */
+    .cfg-summary {
+        position: sticky;
+        top: 80px;
+        border-radius: 12px;
+        background: white;
+        border: 1px solid var(--brand-border);
+        padding: 1.25rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,.04);
+    }
+    .cfg-summary-item {
+        display: flex; align-items: center; gap: 0.6rem;
+        padding: 0.6rem 0;
+        border-bottom: 1px solid var(--brand-border);
+        font-size: 0.85rem;
+    }
+    .cfg-summary-item:last-of-type { border-bottom: none; }
+    .cfg-summary-item .item-icon {
+        width: 32px; height: 32px;
+        background: var(--brand-bg);
+        border-radius: 8px;
+        display: flex; align-items: center; justify-content: center;
+        color: var(--brand-muted);
+        flex-shrink: 0;
+    }
+    .cfg-summary-item.filled .item-icon { background: var(--brand-primary-light); color: var(--brand-primary); }
+    .cfg-summary-item .item-info { flex: 1; min-width: 0; overflow: hidden; }
+    .cfg-summary-item .item-name { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cfg-summary-item .item-meta { font-size: 0.7rem; color: var(--brand-muted); }
+
+    .cfg-total-block {
+        background: linear-gradient(135deg, var(--brand-primary), #7C3AED);
+        color: white;
+        border-radius: 10px;
+        padding: 1rem;
+        margin-top: 1rem;
+    }
+    .cfg-total-block .total-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.85; }
+    .cfg-total-block .total-value { font-size: 1.75rem; font-weight: 800; letter-spacing: -0.02em; }
+
+    /* Индикатор мощности */
+    .cfg-power-bar {
+        height: 8px;
+        background: rgba(255,255,255,0.25);
+        border-radius: 4px;
+        overflow: hidden;
+        margin-top: 0.35rem;
+    }
+    .cfg-power-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #10B981, #F59E0B, #EF4444);
+        transition: width 0.3s;
+    }
+
+    /* Алерты совместимости */
+    .cfg-alert {
+        border-radius: 10px;
+        padding: 0.75rem 1rem;
+        margin-bottom: 0.75rem;
+        font-size: 0.85rem;
+        border: 1px solid;
+        display: flex; align-items: flex-start; gap: 0.6rem;
+    }
+    .cfg-alert-warn { background: #FFFBEB; border-color: #FDE68A; color: #92400E; }
+    .cfg-alert-error { background: #FEF2F2; border-color: #FECACA; color: #991B1B; }
+    .cfg-alert-ok { background: #ECFDF5; border-color: #A7F3D0; color: #065F46; }
+
+    /* Empty state */
+    .cfg-empty {
+        text-align: center;
+        padding: 3rem 1rem;
+        background: var(--brand-bg);
+        border: 2px dashed var(--brand-border);
+        border-radius: 12px;
+        color: var(--brand-muted);
+    }
+    .cfg-empty .empty-icon { font-size: 3rem; opacity: 0.4; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div x-data="configurator()" x-init="init()" x-cloak>
+
+    <!-- Hero -->
+    <div class="cfg-hero">
+        <div class="row align-items-center position-relative">
+            <div class="col-lg-8">
+                <h1 class="mb-2">Конфигуратор сборки ПК</h1>
+                <p class="lead mb-0" style="opacity:0.95;">
+                    Соберите свой компьютер по шагам. Система автоматически
+                    проверит совместимость комплектующих и рассчитает мощность.
+                </p>
+            </div>
+            <div class="col-lg-4 text-end d-none d-lg-block">
+                <i class="bi bi-pc-display-horizontal" style="font-size: 5rem; opacity: 0.3;"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Прогресс-бар -->
+    <div class="cfg-progress">
+        <div class="cfg-progress-bar" :style="`width: ${progressPercent()}%`"></div>
+    </div>
+
+    <!-- Степпер -->
+    <div class="cfg-stepper">
+        <template x-for="(step, idx) in steps" :key="step.key">
+            <div class="cfg-step"
+                 :class="{ 'active': currentStep === idx, 'done': selection[step.key] }"
+                 @click="goToStep(idx)">
+                <div class="step-num" x-text="idx + 1"></div>
+                <i class="bi step-icon" :class="'bi-' + step.icon"></i>
+                <div class="step-title" x-text="step.title"></div>
+                <div class="step-meta" x-text="selection[step.key] ? '✓ выбрано' : (step.required ? 'обязательно' : 'опционально')"></div>
+            </div>
+        </template>
+    </div>
+
+    <div class="row g-4">
+        <!-- Левая часть: выбор -->
+        <div class="col-lg-8">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h2 class="h5 mb-1">
+                        Шаг <span x-text="currentStep + 1"></span> из <span x-text="steps.length"></span>:
+                        <span x-text="steps[currentStep].title"></span>
+                    </h2>
+                    <p class="text-muted small mb-0">
+                        Доступно: <span x-text="filteredComponents().length"></span> из
+                        <span x-text="steps[currentStep].components.length"></span> позиций
+                    </p>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-secondary btn-sm" @click="prevStep()" :disabled="currentStep === 0">
+                        <i class="bi bi-arrow-left"></i> Назад
+                    </button>
+                    <button class="btn btn-primary btn-sm" @click="nextStep()" :disabled="currentStep === steps.length - 1">
+                        Далее <i class="bi bi-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Уведомления совместимости -->
+            <template x-for="msg in incompatibilityMessages()" :key="msg.text">
+                <div class="cfg-alert" :class="msg.type === 'error' ? 'cfg-alert-error' : 'cfg-alert-warn'">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    <span x-text="msg.text"></span>
+                </div>
+            </template>
+
+            <!-- Кнопка сбросить выбор текущего шага -->
+            <div x-show="selection[steps[currentStep].key]" class="mb-3">
+                <button class="btn btn-link btn-sm text-danger p-0" @click="clearStep()">
+                    <i class="bi bi-x-circle"></i> Сбросить выбор
+                </button>
+            </div>
+
+            <!-- Сетка компонентов -->
+            <div class="row g-3" x-show="filteredComponents().length > 0">
+                <template x-for="comp in filteredComponents()" :key="comp.id">
+                    <div class="col-md-6">
+                        <div class="cfg-component-card"
+                             :class="{
+                                'selected': selection[steps[currentStep].key] === comp.id,
+                                'incompatible': !isCompatible(comp)
+                             }"
+                             @click="isCompatible(comp) && selectComponent(comp)">
+                            <template x-if="!isCompatible(comp)">
+                                <span class="cfg-badge-incompat">несовместимо</span>
+                            </template>
+                            <template x-if="isCompatible(comp) && isRecommended(comp)">
+                                <span class="cfg-badge-recommended"><i class="bi bi-stars"></i> рекомендуем</span>
+                            </template>
+                            <div class="mb-2">
+                                <small class="text-muted" x-text="comp.brand"></small>
+                                <div class="fw-semibold" x-text="comp.title"></div>
+                            </div>
+                            <div class="flex-grow-1" x-show="Object.keys(comp.specs).length">
+                                <template x-for="(value, key) in displayedSpecs(comp)" :key="key">
+                                    <div class="cfg-spec-row">
+                                        <span x-text="key"></span>
+                                        <span class="text-end" x-text="value"></span>
+                                    </div>
+                                </template>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-end mt-2 pt-2 border-top">
+                                <span class="cfg-component-price" x-text="formatPrice(comp.price)"></span>
+                                <small class="text-success" x-show="comp.stock > 0">
+                                    <i class="bi bi-check2"></i> в наличии: <span x-text="comp.stock"></span>
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+
+            <!-- Empty state -->
+            <div class="cfg-empty" x-show="filteredComponents().length === 0">
+                <div class="empty-icon mb-2"><i class="bi bi-search"></i></div>
+                <h6 class="mb-1">Нет совместимых позиций</h6>
+                <p class="mb-0 small">Попробуйте изменить выбор предыдущих шагов</p>
+            </div>
+        </div>
+
+        <!-- Правая часть: сводка -->
+        <div class="col-lg-4">
+            <div class="cfg-summary">
+                <h5 class="mb-3">Ваша сборка</h5>
+
+                <template x-for="step in steps" :key="step.key">
+                    <div class="cfg-summary-item" :class="{ 'filled': selection[step.key] }">
+                        <div class="item-icon"><i class="bi" :class="'bi-' + step.icon"></i></div>
+                        <div class="item-info">
+                            <div class="item-name" x-text="getComponentName(step) || step.title"></div>
+                            <div class="item-meta" x-text="getComponentMeta(step) || (step.required ? 'не выбрано' : 'опционально')"></div>
+                        </div>
+                        <div x-show="selection[step.key]">
+                            <small class="fw-bold" x-text="formatPrice(getComponentPrice(step))"></small>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- Индикатор мощности -->
+                <div class="cfg-total-block">
+                    <div class="d-flex justify-content-between align-items-baseline mb-2">
+                        <span class="total-label">Итого</span>
+                        <span x-text="selectedCount() + ' / ' + steps.length"></span>
+                    </div>
+                    <div class="total-value" x-text="formatPrice(totalPrice())"></div>
+
+                    <div class="mt-3" x-show="estimatedPower() > 0">
+                        <div class="d-flex justify-content-between align-items-baseline">
+                            <small style="opacity:0.85;">Расчётное энергопотребление</small>
+                            <small><strong x-text="estimatedPower() + ' Вт'"></strong></small>
+                        </div>
+                        <div class="cfg-power-bar">
+                            <div class="cfg-power-fill" :style="`width: ${Math.min(100, estimatedPower() / 10)}%`"></div>
+                        </div>
+                        <template x-if="powerWarning()">
+                            <small x-text="powerWarning()" class="d-block mt-1" style="opacity:0.95;"></small>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- Действия -->
+                <div class="mt-3 d-grid gap-2">
+                    <button class="btn btn-accent" @click="saveBuild(true)" :disabled="!canCheckout() || saving">
+                        <i class="bi bi-bag-plus"></i>
+                        <span x-show="!saving">В корзину — <span x-text="formatPrice(totalPrice())"></span></span>
+                        <span x-show="saving">Сохранение…</span>
+                    </button>
+                    <button class="btn btn-outline-primary btn-sm" @click="saveBuild(false)" :disabled="!canCheckout() || saving">
+                        <i class="bi bi-bookmark"></i> Сохранить сборку
+                    </button>
+                    <button class="btn btn-link btn-sm text-muted" @click="resetAll()">
+                        <i class="bi bi-arrow-counterclockwise"></i> Начать заново
+                    </button>
+                </div>
+
+                <div x-show="!canCheckout() && selectedCount() > 0" class="cfg-alert cfg-alert-warn mt-3 mb-0">
+                    <i class="bi bi-info-circle"></i>
+                    <span>Заполните все обязательные шаги, чтобы оформить заказ</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{ steps_data|json_script:"steps-data" }}
+
+<script>
+function configurator() {
+    return {
+        steps: JSON.parse(document.getElementById('steps-data').textContent),
+        currentStep: 0,
+        selection: {},   // key -> component id
+        saving: false,
+
+        init() {
+            // Восстановим из localStorage
+            const saved = localStorage.getItem('pcshop_configurator');
+            if (saved) {
+                try { this.selection = JSON.parse(saved); } catch(e) {}
+            }
+            this.$watch('selection', () => {
+                localStorage.setItem('pcshop_configurator', JSON.stringify(this.selection));
+            }, { deep: true });
+        },
+
+        currentStepData() { return this.steps[this.currentStep]; },
+
+        progressPercent() {
+            return Math.round((this.selectedCount() / this.steps.length) * 100);
+        },
+        selectedCount() {
+            return Object.values(this.selection).filter(Boolean).length;
+        },
+        canCheckout() {
+            return this.steps.filter(s => s.required).every(s => this.selection[s.key]);
+        },
+
+        // ---- Навигация ----
+        goToStep(i) { this.currentStep = i; window.scrollTo({top: 0, behavior: 'smooth'}); },
+        nextStep() { if (this.currentStep < this.steps.length - 1) this.goToStep(this.currentStep + 1); },
+        prevStep() { if (this.currentStep > 0) this.goToStep(this.currentStep - 1); },
+
+        // ---- Выбор ----
+        selectComponent(comp) {
+            const key = this.currentStepData().key;
+            this.selection[key] = (this.selection[key] === comp.id) ? null : comp.id;
+            if (this.selection[key] && this.currentStep < this.steps.length - 1) {
+                setTimeout(() => this.nextStep(), 300);
+            }
+        },
+        clearStep() { this.selection[this.currentStepData().key] = null; },
+        resetAll() {
+            if (confirm('Сбросить всю сборку?')) {
+                this.selection = {};
+                this.currentStep = 0;
+            }
+        },
+
+        // ---- Совместимость ----
+        getSelectedComponent(key) {
+            const step = this.steps.find(s => s.key === key);
+            if (!step) return null;
+            const id = this.selection[key];
+            return step.components.find(c => c.id === id) || null;
+        },
+
+        isCompatible(comp) {
+            const stepKey = this.currentStepData().key;
+
+            // 1) CPU ↔ Motherboard по сокету
+            if (stepKey === 'motherboard') {
+                const cpu = this.getSelectedComponent('cpu');
+                if (cpu) {
+                    const cpuSock = cpu.specs.sockets || cpu.specs.socket;
+                    const mbSock = comp.specs.socket;
+                    if (cpuSock && mbSock && cpuSock !== mbSock) return false;
+                }
+            }
+            if (stepKey === 'cpu') {
+                const mb = this.getSelectedComponent('motherboard');
+                if (mb) {
+                    const cpuSock = comp.specs.sockets || comp.specs.socket;
+                    if (mb.specs.socket && cpuSock && mb.specs.socket !== cpuSock) return false;
+                }
+            }
+
+            // 2) MB ↔ RAM по типу памяти
+            if (stepKey === 'ram') {
+                const mb = this.getSelectedComponent('motherboard');
+                if (mb && mb.specs.memory && comp.specs.type && mb.specs.memory !== comp.specs.type) return false;
+            }
+            if (stepKey === 'motherboard') {
+                const ram = this.getSelectedComponent('ram');
+                if (ram && comp.specs.memory && ram.specs.type && comp.specs.memory !== ram.specs.type) return false;
+            }
+
+            // 3) PSU мощность ≥ потребление с запасом
+            if (stepKey === 'psu') {
+                const needed = this.estimatedPower();
+                if (needed > 0 && comp.specs.power_w && comp.specs.power_w < needed) return false;
+            }
+
+            // 4) Кулер должен тянуть TDP процессора
+            if (stepKey === 'cooling') {
+                const cpu = this.getSelectedComponent('cpu');
+                if (cpu && cpu.specs.tdp_w && comp.specs.tdp_w && comp.specs.tdp_w < cpu.specs.tdp_w) return false;
+            }
+
+            return true;
+        },
+
+        isRecommended(comp) {
+            // Дешёвый рекомендатор: на текущем шаге — позиция с минимальной ценой среди совместимых
+            const compat = this.filteredComponents().filter(c => this.isCompatibleStrict(c));
+            if (!compat.length) return false;
+            return compat[0].id === comp.id;
+        },
+        isCompatibleStrict(comp) { return this.isCompatible(comp); },
+
+        filteredComponents() {
+            return (this.currentStepData().components || []).slice().sort((a, b) => {
+                const aOK = this.isCompatible(a), bOK = this.isCompatible(b);
+                if (aOK !== bOK) return aOK ? -1 : 1;
+                return a.price - b.price;
+            });
+        },
+
+        incompatibilityMessages() {
+            const msgs = [];
+            const cpu = this.getSelectedComponent('cpu');
+            const mb = this.getSelectedComponent('motherboard');
+            const ram = this.getSelectedComponent('ram');
+            const psu = this.getSelectedComponent('psu');
+            const gpu = this.getSelectedComponent('gpu');
+            const cooler = this.getSelectedComponent('cooling');
+
+            if (cpu && mb) {
+                const cpuS = cpu.specs.sockets || cpu.specs.socket;
+                if (cpuS && mb.specs.socket && cpuS !== mb.specs.socket) {
+                    msgs.push({ type: 'error', text: `Сокеты не совпадают: CPU ${cpuS}, плата ${mb.specs.socket}.` });
+                }
+            }
+            if (mb && ram) {
+                if (mb.specs.memory && ram.specs.type && mb.specs.memory !== ram.specs.type) {
+                    msgs.push({ type: 'error', text: `Тип памяти: плата ${mb.specs.memory}, модуль ${ram.specs.type}.` });
+                }
+            }
+            if (psu) {
+                const needed = this.estimatedPower();
+                if (needed > 0 && psu.specs.power_w && psu.specs.power_w < needed) {
+                    msgs.push({ type: 'error', text: `БП ${psu.specs.power_w} Вт не покрывает потребление ${needed} Вт.` });
+                } else if (needed > 0 && psu.specs.power_w && psu.specs.power_w < needed + 100) {
+                    msgs.push({ type: 'warn', text: `БП на пределе. Рекомендуем запас 100+ Вт.` });
+                }
+            }
+            if (cpu && cooler && cooler.specs.tdp_w && cpu.specs.tdp_w && cooler.specs.tdp_w < cpu.specs.tdp_w) {
+                msgs.push({ type: 'warn', text: `Кулер до ${cooler.specs.tdp_w} Вт может не справиться с CPU TDP ${cpu.specs.tdp_w} Вт.` });
+            }
+            return msgs;
+        },
+
+        // ---- Мощность и цена ----
+        estimatedPower() {
+            let total = 80;   // плата + накопители + вентиляторы
+            const cpu = this.getSelectedComponent('cpu');
+            const gpu = this.getSelectedComponent('gpu');
+            if (cpu && cpu.specs.tdp_w) total += cpu.specs.tdp_w;
+            if (gpu && gpu.specs.tdp_w) total += gpu.specs.tdp_w;
+            return total;
+        },
+        powerWarning() {
+            const psu = this.getSelectedComponent('psu');
+            const need = this.estimatedPower();
+            if (!psu) return need > 0 ? `Подберите БП минимум на ${need + 100} Вт` : null;
+            if (psu.specs.power_w < need) return `Недостаточно: БП ${psu.specs.power_w} Вт, нужно ${need} Вт`;
+            if (psu.specs.power_w < need + 100) return `БП на пределе мощности`;
+            return null;
+        },
+
+        totalPrice() {
+            let total = 0;
+            for (const step of this.steps) {
+                const c = this.getSelectedComponent(step.key);
+                if (c) total += c.price;
+            }
+            return total;
+        },
+        formatPrice(n) {
+            return (n || 0).toLocaleString('ru-RU', { maximumFractionDigits: 0 }) + ' ₽';
+        },
+
+        // ---- Информация для сводки ----
+        getComponentName(step) {
+            const c = this.getSelectedComponent(step.key);
+            return c ? (c.brand + ' ' + (c.model || c.title)).trim() : '';
+        },
+        getComponentMeta(step) {
+            const c = this.getSelectedComponent(step.key);
+            if (!c) return '';
+            const k = Object.keys(c.specs);
+            if (k.length) {
+                const first = k[0];
+                return first + ': ' + c.specs[first];
+            }
+            return c.category_title;
+        },
+        getComponentPrice(step) {
+            const c = this.getSelectedComponent(step.key);
+            return c ? c.price : 0;
+        },
+        displayedSpecs(comp) {
+            const out = {};
+            const keys = Object.keys(comp.specs).slice(0, 4);
+            for (const k of keys) out[k] = comp.specs[k];
+            return out;
+        },
+
+        // ---- Сохранение ----
+        async saveBuild(addToCart) {
+            if (!this.canCheckout()) return;
+            this.saving = true;
+            const csrf = document.querySelector('[name=csrfmiddlewaretoken]')?.value
+                       || document.cookie.split('; ').find(r => r.startsWith('csrftoken='))?.split('=')[1];
+            const title = prompt('Название сборки:', 'Моя сборка ' + new Date().toLocaleDateString('ru-RU'));
+            if (title === null) { this.saving = false; return; }
+
+            try {
+                const res = await fetch('{% url "builds:configure_save" %}', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf },
+                    body: JSON.stringify({
+                        selection: this.selection,
+                        title: title.trim() || 'Моя сборка',
+                        add_to_cart: addToCart,
+                    }),
+                });
+                const data = await res.json();
+                if (data.ok) {
+                    localStorage.removeItem('pcshop_configurator');
+                    window.location.href = data.cart_url || data.url;
+                } else {
+                    alert('Ошибка: ' + (data.error || 'не удалось сохранить'));
+                }
+            } catch (e) {
+                alert('Сетевая ошибка: ' + e.message);
+            } finally {
+                this.saving = false;
+            }
+        },
+    };
+}
+</script>
+
+{% csrf_token %}
+{% endblock %}
