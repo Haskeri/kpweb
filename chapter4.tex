@@ -1,0 +1,136 @@
+\phantomsection
+\section*{Глава 4. Оформление итогов работы}
+\addcontentsline{toc}{section}{Глава 4. Оформление итогов работы}
+\stepcounter{section}
+
+В четвёртой главе описывается организация кодовой базы в системе контроля версий, тестирование и развёртывание приложения.
+
+\subsection{Организация Git-репозитория}
+
+Исходный код проекта размещён в публичном репозитории на платформе GitHub:
+
+\begin{center}
+\textbf{\url{https://github.com/Haskeri/kpweb}}
+\end{center}
+
+Развёрнутое веб-приложение доступно по адресу:
+
+\begin{center}
+\textbf{\url{https://exam.anufriev.pvpcult.ru/}}
+\end{center}
+
+Кодовая база проекта организована в репозитории Git. Корень репозитория содержит каталог \texttt{pcshop/} с Django-проектом, файл \texttt{requirements.txt} со списком зависимостей и файл \texttt{.gitignore}.
+
+Репозиторий содержит полную историю разработки, сформированную в соответствии с этапами курсовой работы. История коммитов отражает последовательное выполнение разделов (таблица~\ref{tab:commits}).
+
+\begin{table}[ht!]
+\caption{История коммитов репозитория}
+\label{tab:commits}
+\small
+\begin{tabularx}{\textwidth}{|p{0.22\textwidth}|p{0.18\textwidth}|>{\RaggedRight\arraybackslash}X|}
+\hline
+\textbf{Коммит} & \textbf{Дата} & \textbf{Содержание} \\ \hline
+Раздел 1 & 25.04.2026 & Анализ предметной области, постановка задачи, структура LaTeX-проекта \\ \hline
+Раздел 2 & 16.05.2026 & Проектирование архитектуры, схема БД, диаграммы компонентов \\ \hline
+Раздел 3 & 06.06.2026 & Разработка веб-приложения, исходный код проекта pcshop (Django 4.2) \\ \hline
+Раздел 4 & 13.06.2026 & Итоговый отчёт, развёртывание, оформление пояснительной записки \\ \hline
+\end{tabularx}
+\end{table}
+
+Файл \texttt{.gitignore} исключает из репозитория:
+\begin{itemize}
+    \item виртуальное окружение \texttt{.venv/} и кэш Python \texttt{\_\_pycache\_\_/};
+    \item базу данных \texttt{db.sqlite3} (содержит пользовательские данные);
+    \item файл конфигурации \texttt{configs/.env} с реальными секретами;
+    \item медиафайлы (загружаемые изображения комплектующих).
+\end{itemize}
+
+В репозитории хранится только файл \texttt{configs/.env.example} --- шаблон переменных окружения без реальных значений. Это обеспечивает безопасность: секреты и чувствительные настройки не попадают в историю коммитов.
+
+Структура файла \texttt{requirements.txt} приведена в таблице~\ref{tab:requirements}.
+
+\begin{table}[ht!]
+\caption{Зависимости проекта (\texttt{requirements.txt})}
+\label{tab:requirements}
+\small
+\begin{tabularx}{\textwidth}{|>{\RaggedRight\arraybackslash}p{0.35\textwidth}|>{\RaggedRight\arraybackslash}X|}
+\hline
+\textbf{Пакет} & \textbf{Назначение} \\ \hline
+\texttt{Django==4.2.16} & Веб-фреймворк (LTS-версия до апреля 2026~г.) \\ \hline
+\texttt{Pillow==10.3.0} & Обработка изображений (загрузка фото комплектующих) \\ \hline
+\texttt{python-decouple==3.8} & Чтение конфигурации из файла \texttt{.env} \\ \hline
+\texttt{psycopg2-binary==2.9.9} & Драйвер PostgreSQL (для продакшен-развёртывания) \\ \hline
+\end{tabularx}
+\end{table}
+
+Установка зависимостей выполняется командой \texttt{pip install -r requirements.txt} в активированном виртуальном окружении Python 3.10+. Для инициализации базы данных и загрузки начальных данных предусмотрены команды:
+
+\begin{lstlisting}[language=bash, caption={Команды инициализации проекта}]
+python manage.py migrate
+python manage.py loaddata fixtures/order_statuses.json
+python manage.py loaddata fixtures/categories.json
+python manage.py loaddata fixtures/components.json
+python manage.py createsuperuser
+\end{lstlisting}
+
+\subsection{Тестирование и развёртывание приложения}
+
+\textbf{Проверка системы.} Встроенная команда Django \texttt{python manage.py check} выполняет статическую проверку конфигурации, URL-маршрутов, моделей и установленных приложений. Команда \texttt{python manage.py check --deploy} дополнительно проверяет настройки безопасности (HTTPS, CSRF, SECRET\_KEY). Оба вида проверки не выявляют ошибок.
+
+\textbf{Ручное тестирование.} Проведено функциональное тестирование всех ключевых сценариев:
+\begin{itemize}
+    \item регистрация нового клиента и вход по email;
+    \item добавление комплектующих в корзину со страницы каталога и со страницы товара;
+    \item создание сборки в конфигураторе с проверкой совместимости;
+    \item оформление заказа с уменьшением остатков на складе;
+    \item смена статуса заказа менеджером;
+    \item экспорт и импорт каталога в формате CSV.
+\end{itemize}
+
+Все сценарии выполняются без ошибок на Python 3.9 при использовании SQLite в качестве СУБД.
+
+\textbf{Развёртывание.} Для локального запуска используется встроенный сервер разработки:
+
+\begin{lstlisting}[language=bash, caption={Запуск сервера разработки}]
+cd pcshop
+source .venv/bin/activate
+python manage.py runserver
+\end{lstlisting}
+
+Приложение становится доступным по адресу \texttt{http://localhost:8000/}. Интерактивная административная панель доступна по адресу \texttt{http://localhost:8000/admin/}.
+
+\textbf{Продакшен-развёртывание.} Помимо локального запуска, проект развёрнут на хостинге и доступен по адресу:
+
+\begin{center}
+\url{https://exam.anufriev.pvpcult.ru/}
+\end{center}
+
+На сервере используется стек: \textbf{Nginx} (обратный прокси) → \textbf{Gunicorn} (WSGI-сервер) → \textbf{Django}. Для корректной работы CSRF-защиты за HTTPS-прокси в настройках указан доверенный источник:
+
+\begin{lstlisting}[language=bash, caption={Ключевые параметры .env на сервере}]
+DEBUG=False
+ALLOWED_HOSTS=exam.anufriev.pvpcult.ru
+CSRF_TRUSTED_ORIGINS=https://exam.anufriev.pvpcult.ru
+SECRET_KEY=<длинный случайный ключ>
+\end{lstlisting}
+
+Переход на продакшен-окружение предполагает замену SQLite на PostgreSQL через переменные окружения в \texttt{.env}:
+
+\begin{lstlisting}[language=bash, caption={Пример файла .env для PostgreSQL}]
+SECRET_KEY=your-long-random-key
+DEBUG=False
+ALLOWED_HOSTS=yourdomain.com
+DB_ENGINE=django.db.backends.postgresql
+DB_NAME=pcshop
+DB_USER=pcshop_user
+DB_PASSWORD=secure_password
+DB_HOST=localhost
+DB_PORT=5432
+\end{lstlisting}
+
+Такой подход обеспечивает принцип «12-factor app»: конфигурация полностью отделена от кода и не попадает в репозиторий.
+
+\subsection*{Выводы по главе 4}
+\addcontentsline{toc}{subsection}{Выводы по главе 4}
+
+В четвёртой главе описана организация кодовой базы в системе Git с корректным \texttt{.gitignore}, разделением конфигурации через \texttt{.env} и фикстурами для первоначального заполнения базы данных. Исходный код размещён в публичном репозитории по адресу \url{https://github.com/Haskeri/kpweb}. Проведено ручное функциональное тестирование всех ключевых пользовательских сценариев. Приложение развёрнуто на хостинге и доступно по адресу \url{https://exam.anufriev.pvpcult.ru/}. Описаны команды запуска в режиме разработки и инструкция по переходу на продакшен-СУБД PostgreSQL без изменения кода приложения.
